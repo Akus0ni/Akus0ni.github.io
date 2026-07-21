@@ -21,6 +21,56 @@
     }
   </style>
 
+  <!-- Mobile responsiveness layer — augments styles.css without modifying it. -->
+  <style id="mobile-responsive">
+    /* Hard guarantee: the page never scrolls sideways on a phone.
+       overflow-x: clip avoids creating a scroll container, so vertical
+       scroll-snap keeps working. */
+    html, body { overflow-x: clip; max-width: 100%; }
+    .module-content, .translation-block, .flow-animation,
+    .arch-diagram, .pattern-cards, .callout { max-width: 100%; }
+
+    /* Long inline code in prose/English columns must wrap, never push width. */
+    .translation-english code, .tl code, .callout code,
+    p code, li code, h1 code, h2 code {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    @media (max-width: 640px) {
+      /* Give code panels more usable width and keep long lines legible. */
+      .translation-code   { padding: var(--space-5) var(--space-4); font-size: 0.8rem; line-height: 1.6; }
+      .translation-english { padding: var(--space-5) var(--space-4); }
+      .code-line { overflow-wrap: anywhere; }
+      .flow-controls, .chat-controls { flex-wrap: wrap; gap: var(--space-2); }
+    }
+
+    @media (max-width: 480px) {
+      /* Tighter module rhythm on phones. */
+      .module { padding-top: calc(var(--nav-height) + var(--space-8)); }
+      .screen-heading { font-size: var(--text-lg); }
+      .translation-code { font-size: 0.74rem; }
+
+      /* Flow actors: a tidy 2x2 grid instead of uneven wrapping. */
+      .flow-actors { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); }
+      .flow-actor-icon { width: 46px; height: 46px; font-size: var(--text-base); }
+
+      /* Shrink the glyph "icons" used in pattern cards ({{ }}, [attr.], …). */
+      .pattern-icon { width: 40px; height: 40px; font-size: 0.9rem; }
+      .pattern-card { padding: var(--space-5); }
+      .icon-circle  { width: 40px; height: 40px; font-size: 1rem; }
+
+      /* Reclaim horizontal space in cards/callouts. */
+      .callout   { padding: var(--space-4); gap: var(--space-3); }
+      .step-card, .icon-row { padding: var(--space-4); }
+      .badge-item { flex-wrap: wrap; }
+
+      /* Keep the nav title from crowding 8 dots. */
+      .nav-title { max-width: 92px; font-size: var(--text-xs); }
+      .nav-dots  { gap: 6px; }
+    }
+  </style>
+
   <script src="main.js" defer></script>
 </head>
 <body>
