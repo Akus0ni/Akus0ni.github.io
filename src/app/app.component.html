@@ -1,0 +1,103 @@
+<!-- ================= Top bar ================= -->
+<header class="topbar" [class.is-scrolled]="scrolled()">
+  <div class="tb-left">
+    <span class="logo" aria-hidden="true"><span class="l-chev">&lt;/&gt;</span></span>
+    <nav class="crumbs mono" aria-label="Breadcrumb">
+      <span class="crumb dim hide-sm">akash-soni</span>
+      <span class="slash hide-sm">/</span>
+      <span class="crumb">{{ activeFile() }}</span>
+    </nav>
+  </div>
+
+  <div class="tb-right">
+    <a class="tb-link mono" [href]="links.resume" download>résumé.pdf</a>
+    <a class="tb-link mono hide-sm" [href]="'mailto:' + links.email">email</a>
+
+    <button class="theme-btn" (click)="toggleTheme()"
+      [attr.aria-label]="theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+      [attr.aria-pressed]="theme() === 'light'">
+      <span class="tb-track">
+        <span class="tb-thumb" [class.light]="theme() === 'light'">
+          @if (theme() === 'dark') {
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/>
+            </svg>
+          } @else {
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="12" cy="12" r="4"/>
+              <path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.4 1.4M17.2 17.2 18.6 18.6M18.6 5 17.2 6.4M6.4 17.2 5 18.6"/>
+            </svg>
+          }
+        </span>
+      </span>
+    </button>
+
+    <button class="burger" (click)="toggleMenu()" [class.open]="menuOpen()" aria-label="Toggle navigation" [attr.aria-expanded]="menuOpen()">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<div class="shell">
+  <!-- ================= Explorer rail ================= -->
+  <aside class="rail" [class.open]="menuOpen()">
+    <p class="rail-title mono">EXPLORER</p>
+    <p class="rail-root mono"><span class="caret">▾</span> AKASH-SONI</p>
+    <nav aria-label="Sections">
+      <ul>
+        @for (n of nav; track n.id) {
+          <li>
+            <a class="rail-item" [class.active]="active() === n.id"
+               [href]="'#' + n.id" (click)="go(n.id, $event)">
+              <svg class="ri-icon" viewBox="0 0 24 24" width="15" height="15" fill="none"
+                   stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <path [attr.d]="n.icon"/>
+              </svg>
+              <span class="ri-file mono">{{ n.file }}</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <div class="rail-foot">
+      <a class="rf-link mono" [href]="links.linkedin" target="_blank" rel="noopener">→ linkedin</a>
+      <a class="rf-link mono" [href]="links.github" target="_blank" rel="noopener">→ github</a>
+    </div>
+  </aside>
+
+  @if (menuOpen()) { <div class="scrim" (click)="toggleMenu()"></div> }
+
+  <!-- ================= Main content ================= -->
+  <main class="main">
+    <div class="container">
+      <app-hero></app-hero>
+      <app-about></app-about>
+      <app-experience></app-experience>
+      <app-projects></app-projects>
+      <app-skills></app-skills>
+      <app-education></app-education>
+      <app-contact></app-contact>
+
+      <footer class="foot">
+        <span class="mono">© {{ year }} Akash Soni</span>
+        <span class="mono dim">Angular {{ ngVersion }} · TypeScript · hand-built, no template</span>
+      </footer>
+    </div>
+  </main>
+</div>
+
+<!-- ================= Status bar ================= -->
+<footer class="statusbar mono">
+  <div class="sb-left">
+    <span class="sb-item brand"><span class="git-dot"></span> main</span>
+    <span class="sb-item">↑ open to work</span>
+    <span class="sb-item hide-sm">{{ links.location }}</span>
+  </div>
+  <div class="sb-right">
+    <span class="sb-item hide-sm">UTF-8</span>
+    <span class="sb-item hide-sm">C#</span>
+    <span class="sb-item">§ {{ activeFile() }}</span>
+    <span class="sb-item theme-ind">◎ {{ theme() }}</span>
+  </div>
+</footer>
