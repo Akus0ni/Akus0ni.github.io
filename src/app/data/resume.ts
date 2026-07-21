@@ -51,7 +51,7 @@ export const LINKS: SocialLinks = {
   email: 'asoni7667@gmail.com',
   linkedin: 'https://www.linkedin.com/in/akus0ni/',
   github: 'https://github.com/Akus0ni',
-  resume: 'media/Akash_Soni_Resume_SE.pdf',
+  resume: 'media/Akash_Soni_Resume.pdf',
   location: 'Raipur, Chhattisgarh, India',
 };
 
