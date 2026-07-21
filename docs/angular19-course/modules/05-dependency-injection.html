@@ -1,0 +1,202 @@
+<section class="module" id="module-5" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">05</span>
+      <h1 class="module-title">Dependency injection</h1>
+      <p class="module-subtitle">How a component gets a service without ever calling <code>new</code>: injectors, tokens, the injector hierarchy, and the <code>inject()</code> function.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Request dependencies, never construct them</h2>
+        <p><span class="term" data-definition="Dependency injection: a pattern where a class declares what it needs and a container supplies it, instead of the class creating its own dependencies with new.">Dependency injection</span> (DI) is the backbone that wires this app together. A component does not build its own <code>ResumeService</code>; it <em>asks</em> for one, and an <span class="term" data-definition="A runtime container that maps tokens to instances. When asked for a token, it returns the existing instance or creates one from the matching provider.">injector</span> supplies it.</p>
+
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="flow-step-num">1</div>
+            <p><strong>Token</strong><br>usually a class, e.g. <code>ResumeService</code></p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">2</div>
+            <p><strong>Injector</strong><br>looks up the token in its provider map</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">3</div>
+            <p><strong>Instance</strong><br>returns the cached one, or creates it</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🗝️</div>
+          <div class="callout-content">
+            <strong class="callout-title">What a "token" is</strong>
+            <p>A <span class="term" data-definition="The key used to look up a dependency. A class doubles as its own token; you can also use an InjectionToken for non-class values like config objects.">DI token</span> is the lookup key. A class is its own token, which is why <code>inject(ResumeService)</code> just works. For values without a class — a config object, a base URL — you create an <code>InjectionToken</code> to serve as the key.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Four dependencies, one line each</h2>
+        <p>The root component pulls in everything it needs through <code>inject()</code> — the modern function form of DI.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">app.component.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">export class</span> <span class="code-function">AppComponent</span> <span class="code-keyword">implements</span> AfterViewInit {</span>
+<span class="code-line">  <span class="code-keyword">private</span> themeSvc = <span class="code-function">inject</span>(ThemeService);</span>
+<span class="code-line">  <span class="code-keyword">private</span> sections = <span class="code-function">inject</span>(SectionService);</span>
+<span class="code-line">  <span class="code-keyword">private</span> scrollSpy = <span class="code-function">inject</span>(ScrollSpyService);</span>
+<span class="code-line">  <span class="code-keyword">private</span> resume = <span class="code-function">inject</span>(ResumeService);</span>
+<span class="code-line"></span>
+<span class="code-line">  <span class="code-keyword">readonly</span> theme = <span class="code-keyword">this</span>.themeSvc.theme;</span>
+<span class="code-line">  <span class="code-keyword">readonly</span> nav = <span class="code-keyword">this</span>.sections.sections;</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl">Each <code>inject(Token)</code> asks the current injector for the instance registered under that token.</p>
+              <p class="tl">These run in an <span class="term" data-definition="The window during which inject() is legal: while Angular is constructing a component, directive, or service (field initializers and the constructor). Calling inject() outside it throws.">injection context</span> — field initializers during component construction — which is the only place <code>inject()</code> is allowed.</p>
+              <p class="tl">Because all four services are app-wide singletons, every component that injects them shares the exact same instance.</p>
+              <p class="tl">The component then re-exposes service signals (<code>theme</code>, <code>nav</code>) as its own fields for the template to bind to — a thin pass-through.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading"><code>providedIn: 'root'</code> — singleton + tree-shaking</h2>
+        <p>How does the injector know how to make a <code>ResumeService</code>? The service declares its own provider, right on the class.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">resume.service.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">@Injectable</span>({ <span class="code-property">providedIn</span>: <span class="code-string">'root'</span> })</span>
+<span class="code-line"><span class="code-keyword">export class</span> <span class="code-function">ResumeService</span> {</span>
+<span class="code-line">  <span class="code-keyword">readonly</span> profile = PROFILE;</span>
+<span class="code-line">  <span class="code-keyword">readonly</span> links = LINKS;</span>
+<span class="code-line">  <span class="code-keyword">readonly</span> projects = PROJECTS;</span>
+<span class="code-line">  <span class="code-keyword">readonly</span> skills = SKILLS;</span>
+<span class="code-line">  <span class="code-comment">// …the single source of truth, wrapped for DI</span></span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl"><code>@Injectable({ providedIn: 'root' })</code> registers the class with the root injector as a lazily-created <span class="term" data-definition="A single shared instance for the whole application. Every injector lookup for the token returns that same object.">singleton</span>.</p>
+              <p class="tl">"Lazily" matters: the instance is created the first time something injects it, not at boot.</p>
+              <p class="tl">Because registration lives on the class itself, the bundler can <span class="term" data-definition="Dead-code elimination during the build. If nothing references a providedIn: root service, it is dropped entirely from the shipped bundle.">tree-shake</span> the service away entirely if nothing injects it.</p>
+              <p class="tl">This service is a <em>facade</em>: it wraps the plain <code>resume.ts</code> data module so components depend on an injectable seam, not a hard import.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">🧪</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why wrap static data in a service at all?</strong>
+            <p>The data never changes at runtime, so why not import <code>resume.ts</code> directly? Because DI gives a <em>substitution point</em>. In a unit test you can provide a stub <code>ResumeService</code> with three fake projects; a direct import would be un-mockable. This is separation of concerns bought cheaply — the whole reason the codebase routes all content through <code>ResumeService</code> and <code>SectionService</code>.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The injector hierarchy</h2>
+        <p>There is not one injector — there is a tree of them, and lookups walk <em>up</em> it. Two layers matter here.</p>
+
+        <div class="arch-diagram">
+          <div class="arch-zone arch-zone-browser">
+            <h4 class="arch-zone-label">Environment injectors (app / route scope)</h4>
+            <div class="arch-component" data-desc="Created by bootstrapApplication from appConfig. Holds provideRouter, provideZoneChangeDetection, and every providedIn: root service — ResumeService, ThemeService, ScrollSpyService, SectionService. One instance each, shared app-wide." onclick="showArchDesc(this)">
+              <div class="arch-icon">🌍</div>
+              <span>Root environment injector</span>
+            </div>
+            <div class="arch-component" data-desc="Lazy routes can introduce child environment injectors with their own providers. This app is single-page, so it mostly lives in the root one." onclick="showArchDesc(this)">
+              <div class="arch-icon">🛣️</div>
+              <span>Route injectors (optional)</span>
+            </div>
+          </div>
+          <div class="arch-zone arch-zone-external">
+            <h4 class="arch-zone-label">Element injectors (component/directive scope)</h4>
+            <div class="arch-component" data-desc="Every component and directive instance gets its own element injector, positioned in the DOM tree. It can provide DOM-tied tokens like ElementRef and the host element, and any providers listed in the component's own providers array." onclick="showArchDesc(this)">
+              <div class="arch-icon">🧱</div>
+              <span>Per-element injector</span>
+            </div>
+            <div class="arch-component" data-desc="inject(ElementRef) resolves here — it is specific to THIS component's host node. A resolution that misses the element injectors then falls through to the environment injectors above." onclick="showArchDesc(this)">
+              <div class="arch-icon">🎯</div>
+              <span>ElementRef, host node</span>
+            </div>
+          </div>
+          <div class="arch-description" id="arch-desc">Click any node to see what lives at that level of the injector tree</div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">⬆️</div>
+          <div class="callout-content">
+            <strong class="callout-title">Resolution walks upward</strong>
+            <p>When you <code>inject(X)</code>, Angular checks this element&apos;s injector, then its parent elements&apos; injectors, then the environment injectors, up to root. First match wins. Miss everything and it throws <code>NullInjectorError</code>. This upward walk is why a service provided high in the tree is visible to everything below it.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Element-scoped injection: <code>ElementRef</code></h2>
+        <p>Not every dependency is a global service. The reveal directive injects its own host element — a token only the element injector can satisfy.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">reveal.directive.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">export class</span> <span class="code-function">RevealDirective</span> <span class="code-keyword">implements</span> OnInit, OnDestroy {</span>
+<span class="code-line">  <span class="code-keyword">@Input</span>() revealDelay = <span class="code-number">0</span>;</span>
+<span class="code-line">  <span class="code-keyword">private</span> el = <span class="code-function">inject</span>(ElementRef&lt;HTMLElement&gt;);</span>
+<span class="code-line">  <span class="code-keyword">private</span> observer?: IntersectionObserver;</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl"><code>inject(ElementRef)</code> resolves against the directive&apos;s own element injector, returning a handle to the exact DOM node the directive is attached to.</p>
+              <p class="tl">This could never come from the root injector — it is inherently per-element. That is what the element-injector layer exists for.</p>
+              <p class="tl">The same <code>inject()</code> function transparently handles both global singletons and element-scoped tokens; the hierarchy decides where each resolves.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading"><code>inject()</code> vs. constructor injection</h2>
+        <p>Both forms do the same DI lookup. The function form is what this codebase uses everywhere, and it has concrete advantages.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">🧬</div>
+            <h4 class="pattern-title">Composes cleanly</h4>
+            <p class="pattern-desc">Shared setup can be extracted into plain functions that call <code>inject()</code>, reused across classes — impossible with constructor parameters.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🧾</div>
+            <h4 class="pattern-title">Better types</h4>
+            <p class="pattern-desc">No reliance on parameter decorators or <code>emitDecoratorMetadata</code>; generics like <code>ElementRef&lt;HTMLElement&gt;</code> flow through naturally.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">🪜</div>
+            <h4 class="pattern-title">No constructor noise</h4>
+            <p class="pattern-desc">Dependencies read as field initializers instead of a long constructor signature; subclassing does not force super-call plumbing.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <div class="callout-icon">⏱️</div>
+          <div class="callout-content">
+            <strong class="callout-title">The one rule: injection context</strong>
+            <p><code>inject()</code> only works <em>while Angular is constructing the class</em> — in field initializers or the constructor body. Call it later, inside a click handler or a <code>setTimeout</code>, and it throws. If you must inject after construction, capture an <code>Injector</code> during construction and use <code>runInInjectionContext</code>.</p>
+          </div>
+        </div>
+
+        <p>Injected services hold signals; templates read them. What actually decides <em>when</em> Angular re-reads and repaints? That is change detection — and the zone that drives it.</p>
+      </section>
+
+    </div>
+  </div>
+</section>

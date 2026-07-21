@@ -1,0 +1,219 @@
+<section class="module" id="module-4" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">04</span>
+      <h1 class="module-title">Signals &amp; the reactive graph</h1>
+      <p class="module-subtitle">The reactive primitive that this whole app uses instead of RxJS subjects: a value that knows who reads it and notifies them when it changes.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A signal is a value with a memory of its readers</h2>
+        <p>A <span class="term" data-definition="A reactive wrapper around a value. Reading it inside a reactive context records a dependency; writing it schedules notification of every dependent.">signal</span> is a zero-argument getter function wrapping a value. The trick is in the two operations:</p>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">👁️</div>
+            <div>
+              <strong>Read — <code>mySignal()</code></strong>
+              <p>Returns the current value. If called inside a reactive context (a <code>computed</code> or <code>effect</code>), it registers that context as a dependent.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">✍️</div>
+            <div>
+              <strong>Write — <code>.set(v)</code> / <code>.update(fn)</code></strong>
+              <p>Replaces the value (or derives it from the previous one) and marks every dependent as stale — without re-running anything yet.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">📐</div>
+          <div class="callout-content">
+            <strong class="callout-title">The type distinction</strong>
+            <p><code>signal(0)</code> returns a <span class="term" data-definition="A signal you can write to, exposing set/update/asReadonly. computed() returns a plain read-only Signal with no setters.">WritableSignal</span>. A <code>computed()</code> returns a read-only <code>Signal</code> — no <code>.set</code>, no <code>.update</code>. The compiler enforces the difference, so derived state literally cannot be mutated by accident.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The three writable signals behind the skills filter</h2>
+        <p>The command-palette section holds all its UI state in three writable signals — search text, active category, highlighted row.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">skills.component.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">readonly</span> query = <span class="code-function">signal</span>(<span class="code-string">''</span>);</span>
+<span class="code-line"><span class="code-keyword">readonly</span> activeCat = <span class="code-function">signal</span>&lt;<span class="code-keyword">string</span> | <span class="code-keyword">null</span>&gt;(<span class="code-keyword">null</span>);</span>
+<span class="code-line"><span class="code-keyword">readonly</span> index = <span class="code-function">signal</span>(<span class="code-number">0</span>);</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-function">setCat</span>(group: <span class="code-keyword">string</span> | <span class="code-keyword">null</span>): <span class="code-keyword">void</span> {</span>
+<span class="code-line">  <span class="code-keyword">this</span>.activeCat.<span class="code-function">update</span>((cur) =&gt; (cur === group ? <span class="code-keyword">null</span> : group));</span>
+<span class="code-line">  <span class="code-keyword">this</span>.index.<span class="code-function">set</span>(<span class="code-number">0</span>);</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl">Three independent pieces of state, each a writable signal with its initial value and type.</p>
+              <p class="tl"><code>.update()</code> takes the current value and returns the next — here toggling the category off if you click the one already active.</p>
+              <p class="tl"><code>.set(0)</code> resets the highlight. Both writes mark dependents stale; nothing recomputes until something reads.</p>
+              <p class="tl"><code>readonly</code> protects the <em>binding</em> (you cannot reassign the field), while the signal&apos;s own API controls value mutation. Idiomatic Angular signal style.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading"><code>computed()</code>: derived, lazy, memoized</h2>
+        <p>The filtered result is a <span class="term" data-definition="A read-only signal whose value is derived from other signals. It re-runs only when read after a dependency changed, and caches (memoizes) its result otherwise.">computed signal</span>. It reads the three inputs and produces the visible rows — and it only does that work when someone actually reads it.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">skills.component.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">readonly</span> filtered = <span class="code-function">computed</span>&lt;Row[]&gt;(() =&gt; {</span>
+<span class="code-line">  <span class="code-keyword">const</span> q = <span class="code-keyword">this</span>.<span class="code-function">query</span>().<span class="code-function">trim</span>().<span class="code-function">toLowerCase</span>();</span>
+<span class="code-line">  <span class="code-keyword">const</span> cat = <span class="code-keyword">this</span>.<span class="code-function">activeCat</span>();</span>
+<span class="code-line">  <span class="code-keyword">return</span> <span class="code-keyword">this</span>.rows.<span class="code-function">filter</span>(</span>
+<span class="code-line">    (r) =&gt; (!cat || r.group === cat) &amp;&amp; (!q || r.hay.<span class="code-function">includes</span>(q)),</span>
+<span class="code-line">  );</span>
+<span class="code-line">});</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl">Reading <code>query()</code> and <code>activeCat()</code> inside the body registers them as this computed&apos;s dependencies — automatically, no dependency list to declare.</p>
+              <p class="tl"><code>this.rows</code> is a plain array, not a signal, so it is <em>not</em> tracked — only the two signal reads are.</p>
+              <p class="tl">The result is cached. Read <code>filtered()</code> ten times with no writes in between and the filter runs <strong>once</strong>.</p>
+              <p class="tl">After <code>query</code> or <code>activeCat</code> changes, the cache is invalidated; the next read recomputes. If neither changed, the old array is returned by reference.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">🕸️</div>
+          <div class="callout-content">
+            <strong class="callout-title">Dependencies are dynamic</strong>
+            <p>Only signals actually read on the <em>last</em> run count. If a computed short-circuits before reading a signal (say, an early <code>return</code>), that signal is temporarily <em>not</em> a dependency and its changes will not wake the computed. The graph re-forms on every evaluation.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Trace: one keystroke through the graph</h2>
+        <p>Watch how a single <code>.set()</code> propagates — note that recomputation is <em>pulled</em> by a read, not pushed by the write.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-actor-1","label":"User types. onQuery calls query.set(newValue)."},
+          {"highlight":"flow-actor-2","label":"query marks its dependents STALE: the filtered computed and any effects/views that read it. No computation runs yet.","packet":true,"from":"actor-1","to":"actor-2"},
+          {"highlight":"flow-actor-3","label":"Change detection reaches the @for and the count binding, which READ filtered().","packet":true,"from":"actor-2","to":"actor-3"},
+          {"highlight":"flow-actor-3","label":"Because filtered is stale, it recomputes now (lazy pull), re-reads query and activeCat, and caches the new rows."},
+          {"highlight":"flow-actor-4","label":"The template renders the fresh array; the reused-vs-rebuilt diff from Module 03 runs. Done.","packet":true,"from":"actor-3","to":"actor-4"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-actor-1">
+              <div class="flow-actor-icon">⌨️</div>
+              <span>query.set()</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-2">
+              <div class="flow-actor-icon">🚩</div>
+              <span>Mark stale</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-3">
+              <div class="flow-actor-icon">🧮</div>
+              <span>filtered()</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-4">
+              <div class="flow-actor-icon">🖼️</div>
+              <span>Template</span>
+            </div>
+          </div>
+          <div class="flow-packet" id="flow-packet"></div>
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to trace push-then-pull propagation</div>
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🧊</div>
+          <div class="callout-content">
+            <strong class="callout-title">Push notification, pull evaluation — and glitch-free</strong>
+            <p>Writes only <em>push</em> a stale flag; values are <em>pulled</em> lazily on read. A consequence: within one synchronous update, a computed can never be observed in a half-updated ("glitched") state, because it recomputes at most once, on demand, after all writes have landed.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading"><code>effect()</code>: when you need a side effect, not a value</h2>
+        <p><code>computed</code> derives pure values. When a signal change must touch the <em>outside world</em> — the DOM, <code>localStorage</code>, logging — you use an <span class="term" data-definition="A function that re-runs whenever any signal it reads changes. Used for side effects, not for producing a value. Runs at least once after creation and is scheduled, not synchronous.">effect</span>. The theme service is the textbook case.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">theme.service.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">readonly</span> theme = <span class="code-function">signal</span>&lt;Theme&gt;(<span class="code-keyword">this</span>.<span class="code-function">initial</span>());</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-function">constructor</span>() {</span>
+<span class="code-line">  <span class="code-function">effect</span>(() =&gt; {</span>
+<span class="code-line">    <span class="code-keyword">const</span> t = <span class="code-keyword">this</span>.<span class="code-function">theme</span>();</span>
+<span class="code-line">    document.documentElement.<span class="code-function">setAttribute</span>(<span class="code-string">'data-theme'</span>, t);</span>
+<span class="code-line">    document.documentElement.style.colorScheme = t;</span>
+<span class="code-line">    localStorage.<span class="code-function">setItem</span>(<span class="code-string">'portfolio-theme'</span>, t);</span>
+<span class="code-line">  });</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl">The effect reads <code>theme()</code>, so <code>theme</code> becomes its one dependency.</p>
+              <p class="tl">It runs once immediately after creation to sync the initial state, then again every time <code>theme</code> is written.</p>
+              <p class="tl">Each run writes the <code>data-theme</code> attribute (which flips every <code>var(--*)</code> token across the app), sets <code>color-scheme</code>, and persists the choice.</p>
+              <p class="tl">Created in the constructor, it inherits the service&apos;s injection context, so Angular auto-destroys it when the service is destroyed — no manual teardown.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <div class="callout-icon">🧭</div>
+          <div class="callout-content">
+            <strong class="callout-title">Don&apos;t reach for <code>effect</code> to compute state</strong>
+            <p>If you find an effect writing to <em>another</em> signal, you almost always wanted a <code>computed</code>. Effects are for the boundary between the reactive graph and the imperative world (DOM, storage, analytics). Overusing them recreates the tangled callback graphs that signals exist to eliminate.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Signals vs. RxJS: why this app chose signals</h2>
+        <p>Both model change over time. They solve different shapes of problem, and this codebase is deliberately signals-only.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">🎚️</div>
+            <h4 class="pattern-title">Signals → state</h4>
+            <p class="pattern-desc">Synchronous "what is the value now" questions. Always have a value, read like a variable, integrate directly with change detection. Ideal for UI state.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🌊</div>
+            <h4 class="pattern-title">RxJS → streams</h4>
+            <p class="pattern-desc">Asynchronous event pipelines — debouncing, cancellation, merging websockets. Powerful operators, but overkill for "what colour is the theme".</p>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">The decision heuristic</strong>
+            <p>This app has no network, no cancellation, no event coordination — only synchronous UI state. That is the exact niche signals own. RxJS would add ceremony (subscriptions, teardown, an <code>async</code> pipe) for zero benefit. Reach for RxJS when you have genuine async streams to orchestrate; reach for signals for everything that is "current value of X".</p>
+          </div>
+        </div>
+
+        <p>Signals are read inside services and injected into components. That injection — the <code>inject()</code> calls we keep glossing over — is next.</p>
+      </section>
+
+    </div>
+  </div>
+</section>

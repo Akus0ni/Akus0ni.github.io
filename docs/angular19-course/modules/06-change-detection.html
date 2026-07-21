@@ -1,0 +1,241 @@
+<section class="module" id="module-6" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">06</span>
+      <h1 class="module-title">Change detection &amp; zones</h1>
+      <p class="module-subtitle">The loop that keeps the DOM in sync with your data — what triggers it, how Zone.js knows, how OnPush and signals prune it, and where lifecycle hooks fit.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The loop, in one sentence</h2>
+        <p><span class="term" data-definition="The process where Angular walks the component tree, re-evaluates template bindings, and updates the DOM nodes whose bound values changed.">Change detection</span> (CD) is: <em>something might have changed → walk the component tree top-to-bottom → for each binding, compare the new value to the last one → update only the DOM that differs.</em> The open question is what that "something might have changed" trigger actually is.</p>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">🖱️</div>
+            <div>
+              <strong>DOM events</strong>
+              <p>click, input, keydown — anything with an event binding, plus events anywhere in the tree.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">⏲️</div>
+            <div>
+              <strong>Timers &amp; async</strong>
+              <p><code>setTimeout</code>, <code>setInterval</code>, promises resolving, <code>XMLHttpRequest</code>/<code>fetch</code> completing.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-5)">📡</div>
+            <div>
+              <strong>Signal writes</strong>
+              <p>A signal read in a template changing value marks that specific view for check.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Zone.js: how Angular knows an event happened</h2>
+        <p>Angular does not ask you to call "refresh". Instead <span class="term" data-definition="A library that patches the browser's async APIs so a controlling context (a zone) is notified whenever an async task starts and finishes. Angular ships with it by default.">Zone.js</span> <span class="term" data-definition="Replacing a built-in function with a wrapper that adds behaviour then calls the original. Zone.js monkey-patches setTimeout, addEventListener, Promise, etc.">monkey-patches</span> every async browser API at startup. When any patched task finishes, Angular&apos;s zone (<code>NgZone</code>) is notified and schedules a CD pass. That runtime is installed by one provider from Module 01.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">app.config.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">export const</span> appConfig: ApplicationConfig = {</span>
+<span class="code-line">  <span class="code-property">providers</span>: [</span>
+<span class="code-line">    <span class="code-function">provideZoneChangeDetection</span>({ <span class="code-property">eventCoalescing</span>: <span class="code-keyword">true</span> }),</span>
+<span class="code-line">    <span class="code-function">provideRouter</span>(routes),</span>
+<span class="code-line">  ],</span>
+<span class="code-line">};</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl">Installs the <span class="term" data-definition="Angular's injectable wrapper around a Zone.js zone. It emits a signal when the zone becomes stable (all microtasks drained), which Angular uses to run change detection.">NgZone</span>-based change detection scheduler.</p>
+              <p class="tl"><code>eventCoalescing: true</code> merges multiple events firing within the same task into a <strong>single</strong> CD run, instead of one run per event.</p>
+              <p class="tl">Without coalescing, a burst of events (say, a native control emitting input + change together) could trigger redundant back-to-back tree walks.</p>
+              <p class="tl">This is the one line that makes the whole "just mutate state and the view updates" experience work.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🔭</div>
+          <div class="callout-content">
+            <strong class="callout-title">Escaping the zone</strong>
+            <p>Because Zone.js patches <em>everything</em>, high-frequency work (scroll, <code>requestAnimationFrame</code> loops, third-party libs) can trigger CD far too often — "zone pollution." The escape hatch is <code>NgZone.runOutsideAngular()</code>, which runs code in a zone Angular ignores. Remember this; the scroll-spy at the end of this module is a hand-rolled version of the same idea.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Pruning the walk: OnPush &amp; dirty marking</h2>
+        <p>A full top-down walk on every tick is wasteful for large trees. <span class="term" data-definition="A change detection strategy that skips a component unless it is marked dirty by an input change, an event inside it, a signal it reads, or markForCheck.">OnPush</span> lets a component say "only check me when you have a reason." The typewriter opts in.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">typewriter.component.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">@Component</span>({</span>
+<span class="code-line">  <span class="code-property">selector</span>: <span class="code-string">'app-typewriter'</span>,</span>
+<span class="code-line">  <span class="code-property">standalone</span>: <span class="code-keyword">true</span>,</span>
+<span class="code-line">  <span class="code-property">changeDetection</span>: ChangeDetectionStrategy.OnPush,</span>
+<span class="code-line">  <span class="code-property">template</span>: <span class="code-string">`&lt;span class="tw"&gt;{{ text() }}&lt;/span&gt;`</span>,</span>
+<span class="code-line">})</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl">This subtree is skipped during a normal tick <em>unless</em> it is marked dirty.</p>
+              <p class="tl">It gets marked when: an <code>@Input</code> reference changes, an event fires inside it, <code>markForCheck()</code> is called, or — crucially — a <span class="term" data-definition="A signal that a component's template reads. When it changes, Angular marks exactly that component's view for check, even under OnPush.">signal it reads</span> changes.</p>
+              <p class="tl"><code>{{ text() }}</code> reads a signal, so each typewriter tick marks precisely this view dirty and nothing else on the page.</p>
+              <p class="tl">That is the modern pairing: OnPush + signals gives fine-grained updates without any manual <code>markForCheck</code> calls.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">🧭</div>
+          <div class="callout-content">
+            <strong class="callout-title">Dirty marks travel to the root</strong>
+            <p>When a view is marked dirty, Angular flags a path of <code>dirty</code> flags from that component <em>up</em> to the root. On the next tick, CD walks from the top but <strong>skips any OnPush subtree not on a dirty path</strong>. So marking one deep signal repaints one view, yet the traversal still starts at the root — the flags just tell it where it is allowed to descend.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Lifecycle hooks: the fixed order</h2>
+        <p>Between construction and destruction, Angular calls hooks in a guaranteed sequence. This app uses three of them. <code>ngAfterViewInit</code> is where the root wires up the scroll-spy — because only then does the view (and its section elements) exist.</p>
+
+        <div class="step-cards">
+          <div class="step-card">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <strong>constructor</strong>
+              <p>DI resolves; <code>inject()</code> runs. <code>ThemeService</code> registers its <code>effect</code> here. No DOM yet.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <strong>ngOnInit</strong>
+              <p>Inputs are set; safe to initialise. The reveal directive and typewriter start their observers/timers here.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <strong>ngAfterViewInit</strong>
+              <p>The component&apos;s view and children exist. <code>AppComponent</code> starts the scroll-spy now — the section DOM nodes it measures are finally present.</p>
+            </div>
+          </div>
+          <div class="step-card">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <strong>ngOnDestroy</strong>
+              <p>Teardown. Directives disconnect observers, the typewriter clears its timer, the scroll-spy removes listeners. No leaks.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">app.component.ts</span>
+            <pre><code><span class="code-line"><span class="code-function">ngAfterViewInit</span>(): <span class="code-keyword">void</span> {</span>
+<span class="code-line">  <span class="code-keyword">this</span>.scrollSpy.<span class="code-function">init</span>(<span class="code-keyword">this</span>.sections.<span class="code-function">ids</span>());</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl">Runs once, after the full view tree is rendered.</p>
+              <p class="tl">It hands the ordered section ids to the scroll-spy, which begins measuring their positions.</p>
+              <p class="tl">Doing this in the constructor or <code>ngOnInit</code> would measure elements that do not exist yet — hence the specific hook.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Trace: a click to a repaint</h2>
+        <p>End to end, here is what "toggle the theme" actually sets in motion.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-actor-1","label":"User clicks the theme toggle. The click fires inside a Zone.js-patched addEventListener."},
+          {"highlight":"flow-actor-2","label":"The handler runs toggle(), which writes theme.update(...). Signal write marks dependents stale.","packet":true,"from":"actor-1","to":"actor-2"},
+          {"highlight":"flow-actor-3","label":"The zone task completes; NgZone becomes stable and schedules one change detection tick (coalesced).","packet":true,"from":"actor-2","to":"actor-3"},
+          {"highlight":"flow-actor-3","label":"The theme effect re-runs, setting data-theme on documentElement, which flips every CSS variable."},
+          {"highlight":"flow-actor-4","label":"CD walks dirty paths, re-reads any bindings on theme, and updates only the changed DOM. Repaint done.","packet":true,"from":"actor-3","to":"actor-4"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-actor-1">
+              <div class="flow-actor-icon">🖱️</div>
+              <span>Click</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-2">
+              <div class="flow-actor-icon">📡</div>
+              <span>Signal write</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-3">
+              <div class="flow-actor-icon">🌀</div>
+              <span>NgZone → CD</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-4">
+              <div class="flow-actor-icon">🖼️</div>
+              <span>DOM update</span>
+            </div>
+          </div>
+          <div class="flow-packet" id="flow-packet"></div>
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to trace an event through change detection</div>
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A deliberate detour around the loop</h2>
+        <p>The scroll-spy fires on every scroll event — potentially hundreds per second. Running full CD that often would be ruinous. Its design sidesteps the problem: throttle with <code>requestAnimationFrame</code> and only ever write a <em>signal</em>, letting the signal decide what repaints.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">scroll-spy.service.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">private</span> <span class="code-function">onScroll</span>(): <span class="code-keyword">void</span> {</span>
+<span class="code-line">  <span class="code-keyword">this</span>.scrolled.<span class="code-function">set</span>(window.scrollY &gt; <span class="code-number">20</span>);</span>
+<span class="code-line">  <span class="code-keyword">if</span> (<span class="code-keyword">this</span>.ticking) <span class="code-keyword">return</span>;</span>
+<span class="code-line">  <span class="code-keyword">this</span>.ticking = <span class="code-keyword">true</span>;</span>
+<span class="code-line">  <span class="code-function">requestAnimationFrame</span>(() =&gt; {</span>
+<span class="code-line">    <span class="code-keyword">this</span>.<span class="code-function">compute</span>();</span>
+<span class="code-line">    <span class="code-keyword">this</span>.ticking = <span class="code-keyword">false</span>;</span>
+<span class="code-line">  });</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl">Scroll fires constantly, but the <code>ticking</code> guard collapses a burst into at most one <code>compute()</code> per animation frame.</p>
+              <p class="tl"><code>compute()</code> figures out the active section and calls <code>activeId.set(...)</code> — the only escape into the reactive world.</p>
+              <p class="tl">The active-section highlight is a signal binding, so exactly the views reading <code>activeId</code> refresh — not the whole page.</p>
+              <p class="tl">Deterministic by design: the active section is derived from absolute scroll position each frame, so it never gets "stuck" the way an <code>IntersectionObserver</code> callback can.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🔮</div>
+          <div class="callout-content">
+            <strong class="callout-title">Where this is all heading: zoneless</strong>
+            <p>Angular is moving toward dropping Zone.js entirely. In a <em>zoneless</em> app (experimental in v19), signals become the primary CD trigger — no monkey-patching, smaller bundles, more predictable timing. Code already written the way this app writes it — state in signals, side effects in effects — is the code that ports to zoneless with the least friction.</p>
+          </div>
+        </div>
+
+        <p>The scroll-spy and reveal directive keep pointing at one last actor we have not opened up: directives themselves, and how they reach into the DOM.</p>
+      </section>
+
+    </div>
+  </div>
+</section>

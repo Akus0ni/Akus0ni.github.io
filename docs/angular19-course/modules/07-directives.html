@@ -1,0 +1,191 @@
+<section class="module" id="module-7" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">07</span>
+      <h1 class="module-title">Directives &amp; the DOM</h1>
+      <p class="module-subtitle">Attaching behaviour to any element without a template — host bindings, <code>ElementRef</code>, browser APIs, and disciplined teardown.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A directive is a component without a view</h2>
+        <p>A component <em>is</em> a directive that happens to have a template. An <span class="term" data-definition="A directive with a CSS attribute selector that attaches behaviour to an existing element without rendering its own template. Marked with @Directive.">attribute directive</span> keeps the class, the decorator, the DI, and the lifecycle hooks — but renders nothing of its own. It decorates an element that is already there.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">reveal.directive.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">@Directive</span>({</span>
+<span class="code-line">  <span class="code-property">selector</span>: <span class="code-string">'[appReveal]'</span>,</span>
+<span class="code-line">  <span class="code-property">standalone</span>: <span class="code-keyword">true</span>,</span>
+<span class="code-line">  <span class="code-property">host</span>: { <span class="code-string">'[attr.data-reveal]'</span>: <span class="code-string">'""'</span> },</span>
+<span class="code-line">})</span>
+<span class="code-line"><span class="code-keyword">export class</span> <span class="code-function">RevealDirective</span> <span class="code-keyword">implements</span> OnInit, OnDestroy {</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl"><code>selector: '[appReveal]'</code> — an <em>attribute</em> selector. Any element with <code>appReveal</code> on it gets an instance of this class attached.</p>
+              <p class="tl"><code>standalone: true</code> — like components, directives are standalone in v19; a template imports this directive by listing it in <code>imports</code>.</p>
+              <p class="tl"><span class="term" data-definition="Bindings declared in the directive's host object that apply to the element the directive sits on — properties, attributes, classes, or event listeners on the host element.">host</span> writes a <code>data-reveal</code> attribute onto the host element declaratively — no imperative DOM call needed for the marker.</p>
+              <p class="tl">Used as <code>&lt;app-section-header appReveal /&gt;</code> or <code>&lt;div appReveal [revealDelay]="80"&gt;</code> throughout the sections.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🧷</div>
+          <div class="callout-content">
+            <strong class="callout-title">Two kinds of directive</strong>
+            <p>This is an <strong>attribute</strong> directive — it changes an existing element. The other kind, <strong>structural</strong> directives (<code>*ngIf</code>, <code>*ngFor</code>), added or removed elements. In v19 the structural role is handled by built-in control flow (Module 03), so most directives you write today are attribute directives like this one.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Reaching the real DOM node</h2>
+        <p>To observe when an element scrolls into view, the directive needs the actual DOM node. It injects <code>ElementRef</code> (Module 05) and drives a browser API directly.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">reveal.directive.ts — ngOnInit</span>
+            <pre><code><span class="code-line"><span class="code-function">ngOnInit</span>(): <span class="code-keyword">void</span> {</span>
+<span class="code-line">  <span class="code-keyword">const</span> node = <span class="code-keyword">this</span>.el.nativeElement <span class="code-keyword">as</span> HTMLElement;</span>
+<span class="code-line">  <span class="code-keyword">const</span> reduce = <span class="code-function">matchMedia</span>(<span class="code-string">'(prefers-reduced-motion: reduce)'</span>).matches;</span>
+<span class="code-line">  <span class="code-keyword">if</span> (reduce || <span class="code-keyword">typeof</span> IntersectionObserver === <span class="code-string">'undefined'</span>) {</span>
+<span class="code-line">    node.classList.<span class="code-function">add</span>(<span class="code-string">'is-visible'</span>);</span>
+<span class="code-line">    <span class="code-keyword">return</span>;</span>
+<span class="code-line">  }</span>
+<span class="code-line">  <span class="code-keyword">this</span>.observer = <span class="code-keyword">new</span> <span class="code-function">IntersectionObserver</span>((entries) =&gt; {</span>
+<span class="code-line">    <span class="code-keyword">for</span> (<span class="code-keyword">const</span> e <span class="code-keyword">of</span> entries)</span>
+<span class="code-line">      <span class="code-keyword">if</span> (e.isIntersecting) {</span>
+<span class="code-line">        node.classList.<span class="code-function">add</span>(<span class="code-string">'is-visible'</span>);</span>
+<span class="code-line">        <span class="code-keyword">this</span>.observer?.<span class="code-function">unobserve</span>(node);</span>
+<span class="code-line">      }</span>
+<span class="code-line">  }, { threshold: <span class="code-number">0.12</span>, rootMargin: <span class="code-string">'0px 0px -8% 0px'</span> });</span>
+<span class="code-line">  <span class="code-keyword">this</span>.observer.<span class="code-function">observe</span>(node);</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl"><span class="term" data-definition="ElementRef.nativeElement is the underlying DOM element the directive/component is attached to — the raw browser node you can call classList, style, etc. on.">nativeElement</span> is the raw DOM node; the directive manipulates it directly.</p>
+              <p class="tl">Accessibility first: if the user prefers reduced motion, skip the animation entirely and just reveal the element. A graceful degrade also covers environments without <code>IntersectionObserver</code>.</p>
+              <p class="tl">An <span class="term" data-definition="A browser API that asynchronously reports when an element enters or leaves the viewport, far cheaper than listening to scroll and measuring positions yourself.">IntersectionObserver</span> watches the node; when it enters the viewport it adds <code>is-visible</code> (which triggers the CSS transition) and immediately <code>unobserve</code>s — a one-shot reveal.</p>
+              <p class="tl">This runs entirely <em>outside</em> Angular&apos;s bindings — pure DOM work — which is exactly why it is cheap.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <div class="callout-icon">🛠️</div>
+          <div class="callout-content">
+            <strong class="callout-title">Direct DOM access vs. <code>Renderer2</code></strong>
+            <p>Touching <code>nativeElement</code> directly is fine here because the work is trivial and browser-only. For anything that must run in non-DOM environments (server-side rendering, web workers) or that you want abstracted, Angular offers <span class="term" data-definition="An injectable abstraction over DOM manipulation (setAttribute, addClass, listen). Works across rendering targets like SSR where nativeElement may not exist.">Renderer2</span>. Knowing both exist lets you pick deliberately rather than by habit.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Inputs configure the directive</h2>
+        <p>The directive is parameterised the same way a component is — with an <code>@Input</code>. Here it staggers reveal animations.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">reveal.directive.ts + usage</span>
+            <pre><code><span class="code-line"><span class="code-keyword">@Input</span>() revealDelay = <span class="code-number">0</span>;</span>
+<span class="code-line"><span class="code-comment">// …</span></span>
+<span class="code-line"><span class="code-keyword">if</span> (<span class="code-keyword">this</span>.revealDelay)</span>
+<span class="code-line">  node.style.transitionDelay = <span class="code-string">`${this.revealDelay}ms`</span>;</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-comment">// in a section template:</span></span>
+<span class="code-line">&lt;<span class="code-tag">div</span> <span class="code-attr">class</span>=<span class="code-string">"cmd"</span> <span class="code-attr">appReveal</span> [<span class="code-attr">revealDelay</span>]=<span class="code-string">"80"</span>&gt;</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl"><code>@Input() revealDelay</code> exposes a bindable property with a default of <code>0</code>.</p>
+              <p class="tl"><code>[revealDelay]="80"</code> in a host template passes a value in — the same property-binding syntax from Module 03, targeting a directive input instead of a DOM property.</p>
+              <p class="tl">The directive uses it to offset the CSS transition, producing staggered reveals as a section scrolls in.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Teardown is not optional</h2>
+        <p>Anything a directive or service subscribes to — observers, global listeners, timers — must be released in <code>ngOnDestroy</code>, or it leaks. Both long-lived pieces in this app clean up after themselves.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">reveal.directive.ts &amp; scroll-spy.service.ts</span>
+            <pre><code><span class="code-line"><span class="code-comment">// RevealDirective</span></span>
+<span class="code-line"><span class="code-function">ngOnDestroy</span>(): <span class="code-keyword">void</span> {</span>
+<span class="code-line">  <span class="code-keyword">this</span>.observer?.<span class="code-function">disconnect</span>();</span>
+<span class="code-line">}</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-comment">// ScrollSpyService</span></span>
+<span class="code-line"><span class="code-function">ngOnDestroy</span>(): <span class="code-keyword">void</span> {</span>
+<span class="code-line">  window.<span class="code-function">removeEventListener</span>(<span class="code-string">'scroll'</span>, <span class="code-keyword">this</span>.handler);</span>
+<span class="code-line">  window.<span class="code-function">removeEventListener</span>(<span class="code-string">'resize'</span>, <span class="code-keyword">this</span>.handler);</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl">When the directive&apos;s element is removed, Angular calls <code>ngOnDestroy</code>; <code>disconnect()</code> stops the observer and frees the node reference.</p>
+              <p class="tl">The service stores its listener as a stable <code>handler</code> field precisely so it can remove the <em>same</em> function reference later.</p>
+              <p class="tl">Skip either and you get a <span class="term" data-definition="Memory that is never released because something still references it — here, observers or listeners kept alive after their element is gone. They accumulate and degrade the app over time.">memory leak</span>: dead observers and listeners piling up across navigations.</p>
+              <p class="tl">Note the effect in <code>ThemeService</code> needs none of this — effects auto-destroy with their injection context.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🧹</div>
+          <div class="callout-content">
+            <strong class="callout-title">The teardown mental checklist</strong>
+            <p>For every <code>addEventListener</code>, <code>new IntersectionObserver</code>, <code>setInterval</code>, or manual RxJS <code>subscribe</code> you create, ask "who calls the matching remove/disconnect/clear/unsubscribe?" If the answer is "nobody", it belongs in <code>ngOnDestroy</code> — or use <code>takeUntilDestroyed()</code> / <code>DestroyRef</code> to automate it.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The whole machine, assembled</h2>
+        <p>Seven modules, four systems. Here is how they interlock in this one codebase — and in every Angular app you will read next.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-actor-1)">🌳</div>
+            <h4 class="pattern-title">Component tree</h4>
+            <p class="pattern-desc">Standalone components composed from a root, bootstrapped once, each declaring its own template dependencies via <code>imports</code>.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">📡</div>
+            <h4 class="pattern-title">Signals</h4>
+            <p class="pattern-desc">A pull-based reactive graph holding all state; <code>computed</code> derives, <code>effect</code> bridges to the outside world.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">💉</div>
+            <h4 class="pattern-title">Dependency injection</h4>
+            <p class="pattern-desc">A hierarchy of injectors supplying services and DOM handles through <code>inject()</code>, resolving upward from element to root.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🌀</div>
+            <h4 class="pattern-title">Change detection</h4>
+            <p class="pattern-desc">Zone.js (soon: signals alone) triggers a pruned top-down walk that updates only the DOM whose bound values changed.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">🎓</div>
+          <div class="callout-content">
+            <strong class="callout-title">Reading the next codebase</strong>
+            <p>Open any Angular app and you now know exactly where to look: <code>main.ts</code> for the boot, the root component&apos;s <code>imports</code> for the tree, <code>@Injectable</code> services for shared state and logic, <code>signal</code>/<code>computed</code>/<code>effect</code> for reactivity, and <code>ngOnDestroy</code> for whether it leaks. The framework is four systems wearing many decorators — and you have seen all four run.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>

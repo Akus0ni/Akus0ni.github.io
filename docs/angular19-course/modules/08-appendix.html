@@ -1,0 +1,228 @@
+<section class="module" id="module-8" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">08</span>
+      <h1 class="module-title">Applied — the SQL console, decompiled</h1>
+      <p class="module-subtitle">One feature that exercises every system in the course: a pure tokenizer, signals, a computed, real <code>@if</code>/<code>@else</code>, and lifecycle-driven side effects.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The capstone component</h2>
+        <p>The "Query the résumé" section is a fake database console: tabs pick a saved query, a Run button fakes execution, and results animate in. Nothing is real — no SQL engine, no database. That makes it a clean specimen for watching the framework work, and it touches Modules 02–07 at once.</p>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-4)">🎨</div>
+            <div>
+              <strong>A pure function does the highlighting</strong>
+              <p><code>highlightSql</code> tokenizes each query string once — no reactivity involved.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-5)">📡</div>
+            <div>
+              <strong>Signals hold the interaction state</strong>
+              <p><code>active</code>, <code>running</code>, <code>ms</code> — plus a <code>computed</code> that derives the current query.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-3)">🔁</div>
+            <div>
+              <strong>Lifecycle drives the side effects</strong>
+              <p>An <code>IntersectionObserver</code> auto-runs the first query on scroll-in; teardown cleans it up.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The tokenizer is deliberately <em>not</em> reactive</h2>
+        <p>Syntax highlighting is a pure transformation: same SQL string in, same token array out, forever. So it is a plain function called once at construction — not a signal, not a computed. This is the "don&apos;t over-signal" lesson from Module 04 in practice.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">sql-highlight.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">export function</span> <span class="code-function">highlightSql</span>(sql: <span class="code-keyword">string</span>): SqlToken[][] {</span>
+<span class="code-line">  <span class="code-keyword">return</span> sql.<span class="code-function">split</span>(<span class="code-string">'\n'</span>).<span class="code-function">map</span>((line) =&gt; {</span>
+<span class="code-line">    <span class="code-keyword">const</span> out: SqlToken[] = [];</span>
+<span class="code-line">    <span class="code-keyword">let</span> m: RegExpExecArray | <span class="code-keyword">null</span>;</span>
+<span class="code-line">    TOKEN.lastIndex = <span class="code-number">0</span>;</span>
+<span class="code-line">    <span class="code-keyword">while</span> ((m = TOKEN.<span class="code-function">exec</span>(line))) {</span>
+<span class="code-line">      <span class="code-keyword">if</span> (m[<span class="code-number">1</span>]) out.<span class="code-function">push</span>({ t: m[<span class="code-number">1</span>], c: <span class="code-string">'tok-str'</span> });</span>
+<span class="code-line">      <span class="code-keyword">else if</span> (m[<span class="code-number">2</span>]) {</span>
+<span class="code-line">        <span class="code-keyword">const</span> w = m[<span class="code-number">2</span>].<span class="code-function">toLowerCase</span>();</span>
+<span class="code-line">        out.<span class="code-function">push</span>({ t: m[<span class="code-number">2</span>], c: KEYWORDS.<span class="code-function">has</span>(w) ? <span class="code-string">'tok-key'</span> : FUNCTIONS.<span class="code-function">has</span>(w) ? <span class="code-string">'tok-fn'</span> : <span class="code-string">'tok-id'</span> });</span>
+<span class="code-line">      } <span class="code-keyword">else if</span> (m[<span class="code-number">3</span>]) out.<span class="code-function">push</span>({ t: m[<span class="code-number">3</span>], c: <span class="code-string">'tok-num'</span> });</span>
+<span class="code-line">      <span class="code-keyword">else if</span> (m[<span class="code-number">4</span>]) out.<span class="code-function">push</span>({ t: m[<span class="code-number">4</span>], c: <span class="code-string">''</span> });</span>
+<span class="code-line">      <span class="code-keyword">else</span> out.<span class="code-function">push</span>({ t: m[<span class="code-number">5</span>], c: <span class="code-string">'tok-op'</span> });</span>
+<span class="code-line">    }</span>
+<span class="code-line">    <span class="code-keyword">return</span> out;</span>
+<span class="code-line">  });</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What it does</span>
+            <div class="translation-lines">
+              <p class="tl">Split the SQL into lines, then walk each line with one <span class="term" data-definition="A regular expression: a pattern that matches text. Here a single regex with alternation groups classifies each chunk as a string, word, number, whitespace, or operator.">regex</span> that alternates over string / word / number / whitespace / operator.</p>
+              <p class="tl">A matched word is cross-checked against <code>KEYWORDS</code> and <code>FUNCTIONS</code> sets to tag it <code>tok-key</code>, <code>tok-fn</code>, or plain <code>tok-id</code>.</p>
+              <p class="tl">Each token carries the text <code>t</code> and a CSS class <code>c</code> — the <code>[class]="t.c"</code> the template binds to.</p>
+              <p class="tl">Called eagerly in the component&apos;s <code>queries</code> field initializer. The result never changes, so caching it in a signal would add machinery for nothing.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">🧮</div>
+          <div class="callout-content">
+            <strong class="callout-title">Reactivity is for change, not for computation</strong>
+            <p>A common beginner reflex is to wrap <em>everything</em> in signals. The discipline here: values that never change after creation stay as plain data; only genuinely mutating state (which tab is active, is it running) becomes a signal. Fewer reactive nodes means a smaller graph and less to reason about.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Three signals and a derived query</h2>
+        <p>All the live state is three writable signals plus one <code>computed</code> that selects the active query object — a direct echo of the skills filter from Module 04.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">query-console.component.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">readonly</span> active = <span class="code-function">signal</span>(<span class="code-number">0</span>);</span>
+<span class="code-line"><span class="code-keyword">readonly</span> running = <span class="code-function">signal</span>(<span class="code-keyword">false</span>);</span>
+<span class="code-line"><span class="code-keyword">readonly</span> ms = <span class="code-function">signal</span>(<span class="code-string">'0.6'</span>);</span>
+<span class="code-line"><span class="code-keyword">readonly</span> q = <span class="code-function">computed</span>(() =&gt; <span class="code-keyword">this</span>.queries[<span class="code-keyword">this</span>.<span class="code-function">active</span>()]);</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-function">select</span>(i: <span class="code-keyword">number</span>): <span class="code-keyword">void</span> {</span>
+<span class="code-line">  <span class="code-keyword">if</span> (i === <span class="code-keyword">this</span>.<span class="code-function">active</span>()) { <span class="code-keyword">this</span>.<span class="code-function">run</span>(); <span class="code-keyword">return</span>; }</span>
+<span class="code-line">  <span class="code-keyword">this</span>.active.<span class="code-function">set</span>(i);</span>
+<span class="code-line">  <span class="code-keyword">this</span>.<span class="code-function">run</span>();</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl"><code>active</code> holds the selected tab index; <code>running</code> gates the loading state; <code>ms</code> is the fake execution time shown in the footer.</p>
+              <p class="tl"><code>q = computed(...)</code> derives the whole current query object from <code>active</code>. Every template reference to <code>q()</code> — editor, columns, rows, footer — re-points in one step when the tab changes.</p>
+              <p class="tl"><code>select(i)</code> writes <code>active</code> then triggers a run. Clicking the already-active tab re-runs instead of no-oping — a small UX choice made trivial by signals.</p>
+              <p class="tl">One write to <code>active</code> invalidates <code>q</code>, which the template pulls lazily on the next change-detection pass (Module 06).</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Real <code>@if</code> / <code>@else</code> in the template</h2>
+        <p>Module 03 taught <code>@switch</code> with an illustrative snippet; here is the console&apos;s genuine conditional — the loading state versus the results grid, driven by the <code>running</code> signal.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">query-console.component.ts — template</span>
+            <pre><code><span class="code-line"><span class="code-keyword">@if</span> (running()) {</span>
+<span class="code-line">  &lt;<span class="code-tag">div</span> <span class="code-attr">class</span>=<span class="code-string">"running mono"</span>&gt;</span>
+<span class="code-line">    &lt;<span class="code-tag">span</span> <span class="code-attr">class</span>=<span class="code-string">"spin"</span>&gt;&lt;/<span class="code-tag">span</span>&gt; executing on career.db…</span>
+<span class="code-line">  &lt;/<span class="code-tag">div</span>&gt;</span>
+<span class="code-line">} <span class="code-keyword">@else</span> {</span>
+<span class="code-line">  &lt;<span class="code-tag">div</span> <span class="code-attr">class</span>=<span class="code-string">"grid"</span>&gt; &lt;!-- results table --&gt; &lt;/<span class="code-tag">div</span>&gt;</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl"><code>@if (running())</code> reads the signal directly in the template — no <code>*ngIf</code>, no async pipe.</p>
+              <p class="tl">While <code>running</code> is <code>true</code>, only the spinner subtree exists in the DOM; the results subtree is not rendered at all.</p>
+              <p class="tl"><code>@else</code> swaps to the grid when execution "finishes". Angular creates and destroys the two subtrees as the boolean flips.</p>
+              <p class="tl">Because it reads a signal, the swap is precise: flipping <code>running</code> marks exactly this view for check.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Lifecycle: auto-run on scroll, then clean up</h2>
+        <p>The console runs its first query automatically when it scrolls into view — a side effect wired in <code>ngAfterViewInit</code> and torn down in <code>ngOnDestroy</code>, exactly the discipline from Modules 06 and 07.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">query-console.component.ts</span>
+            <pre><code><span class="code-line"><span class="code-function">ngAfterViewInit</span>(): <span class="code-keyword">void</span> {</span>
+<span class="code-line">  <span class="code-keyword">this</span>.observer = <span class="code-keyword">new</span> <span class="code-function">IntersectionObserver</span>((entries) =&gt; {</span>
+<span class="code-line">    <span class="code-keyword">for</span> (<span class="code-keyword">const</span> e <span class="code-keyword">of</span> entries)</span>
+<span class="code-line">      <span class="code-keyword">if</span> (e.isIntersecting &amp;&amp; !<span class="code-keyword">this</span>.hasAutoRun) {</span>
+<span class="code-line">        <span class="code-keyword">this</span>.hasAutoRun = <span class="code-keyword">true</span>;</span>
+<span class="code-line">        <span class="code-keyword">this</span>.<span class="code-function">run</span>();</span>
+<span class="code-line">        <span class="code-keyword">this</span>.observer?.<span class="code-function">disconnect</span>();</span>
+<span class="code-line">      }</span>
+<span class="code-line">  }, { threshold: <span class="code-number">0.35</span> });</span>
+<span class="code-line">  <span class="code-keyword">this</span>.observer.<span class="code-function">observe</span>(<span class="code-keyword">this</span>.host.nativeElement);</span>
+<span class="code-line">}</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-function">ngOnDestroy</span>(): <span class="code-keyword">void</span> {</span>
+<span class="code-line">  <span class="code-function">clearTimeout</span>(<span class="code-keyword">this</span>.timer);</span>
+<span class="code-line">  <span class="code-keyword">this</span>.observer?.<span class="code-function">disconnect</span>();</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl">In <code>ngAfterViewInit</code> the host element exists, so it can be observed. When it enters the viewport, run once and immediately <code>disconnect</code> — the <code>hasAutoRun</code> guard plus disconnect make it strictly one-shot.</p>
+              <p class="tl"><code>run()</code> sets <code>running(true)</code> and a <code>setTimeout</code> that flips it back after ~430ms, faking execution latency.</p>
+              <p class="tl"><code>ngOnDestroy</code> clears the pending timer <em>and</em> disconnects the observer — no dangling callbacks if the component is torn down mid-run.</p>
+              <p class="tl">A reduced-motion check (elsewhere in <code>run()</code>) skips the spinner entirely — the accessibility floor again.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Trace: clicking a query tab</h2>
+        <p>Every system in the course, firing on one click. Follow it end to end.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-actor-1","label":"User clicks the projects tab. The (click) event binding runs select(1) inside a Zone.js-patched listener."},
+          {"highlight":"flow-actor-2","label":"select writes active.set(1). The active signal marks its dependents stale — including the q computed.","packet":true,"from":"actor-1","to":"actor-2"},
+          {"highlight":"flow-actor-2","label":"select also calls run(): running.set(true) and a setTimeout is scheduled to flip it back."},
+          {"highlight":"flow-actor-3","label":"NgZone settles and runs one change detection pass. The template pulls q() — it recomputes lazily to the projects query object.","packet":true,"from":"actor-2","to":"actor-3"},
+          {"highlight":"flow-actor-3","label":"@if(running()) is true, so only the spinner renders. The pre-tokenized SQL for the new tab shows in the editor via [class] bindings."},
+          {"highlight":"flow-actor-4","label":"~430ms later the timeout flips running.set(false); a second CD pass swaps @else in and the result rows animate. Done.","packet":true,"from":"actor-3","to":"actor-4"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-actor-1">
+              <div class="flow-actor-icon">🖱️</div>
+              <span>Tab click</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-2">
+              <div class="flow-actor-icon">📡</div>
+              <span>Signals</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-3">
+              <div class="flow-actor-icon">🌀</div>
+              <span>CD + computed</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-4">
+              <div class="flow-actor-icon">📊</div>
+              <span>Results</span>
+            </div>
+          </div>
+          <div class="flow-packet" id="flow-packet"></div>
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to trace a tab click through all four systems</div>
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🏁</div>
+          <div class="callout-content">
+            <strong class="callout-title">You have read the whole machine</strong>
+            <p>This one component is the course in miniature: a standalone component (02) with a signal-based template (03, 04), assembled through dependency injection (05), repainted by change detection (06), reaching the DOM through lifecycle-managed observers (07). Every Angular feature you meet next is a variation on these moves.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</section>

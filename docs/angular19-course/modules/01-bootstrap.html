@@ -1,0 +1,175 @@
+<section class="module" id="module-1" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">01</span>
+      <h1 class="module-title">Bootstrap &amp; the standalone application</h1>
+      <p class="module-subtitle">What happens in the milliseconds between <code>index.html</code> loading and the first component painting to the screen.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">What we are decompiling</h2>
+        <p>This course reads one real codebase — a single-page developer portfolio built on <span class="term" data-definition="A TypeScript framework by Google for building web applications. It compiles components ahead of time into optimized JavaScript instructions.">Angular 19</span>. There is no backend and no runtime data fetching: every piece of content is static TypeScript, rendered by Angular using signals and scroll-driven UI. That makes it an ideal specimen — nothing is hidden behind a network call, so the entire machine is the framework itself.</p>
+        <p>We are only teaching the <strong>Angular</strong> layer, at the level of an engineer who wants to know <em>why the framework behaves the way it does</em>, not just how to call its APIs.</p>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🧭</div>
+          <div class="callout-content">
+            <strong class="callout-title">The mental model to hold</strong>
+            <p>An Angular app is a <strong>tree of components</strong>, driven by a <strong>change detection</strong> loop, wired together by <strong>dependency injection</strong>, and increasingly steered by <strong>signals</strong>. Those four systems are the whole course. This module starts the tree.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The entry point is six lines</h2>
+        <p>A browser cannot run an Angular component directly. Something has to create the root component, attach it to the DOM, and start the runtime. That bootstrap ritual lives in <code>src/main.ts</code>.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">main.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">import</span> { bootstrapApplication } <span class="code-keyword">from</span> <span class="code-string">'@angular/platform-browser'</span>;</span>
+<span class="code-line"><span class="code-keyword">import</span> { appConfig } <span class="code-keyword">from</span> <span class="code-string">'./app/app.config'</span>;</span>
+<span class="code-line"><span class="code-keyword">import</span> { AppComponent } <span class="code-keyword">from</span> <span class="code-string">'./app/app.component'</span>;</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-function">bootstrapApplication</span>(AppComponent, appConfig)</span>
+<span class="code-line">  .<span class="code-function">catch</span>((err) =&gt; console.<span class="code-function">error</span>(err));</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl">Pull in the standalone bootstrap function — the modern replacement for the old <code>platformBrowserDynamic().bootstrapModule()</code> path.</p>
+              <p class="tl">Import the application <span class="term" data-definition="A plain object of type ApplicationConfig holding the providers array — the app-wide dependency injection configuration. Replaces what the root NgModule used to declare.">config</span> and the root component class.</p>
+              <p class="tl">Create the root <span class="term" data-definition="A dependency injection container scoped to the whole application. It owns every service registered with providedIn: root and everything in the providers array.">environment injector</span> from <code>appConfig</code>, instantiate <code>AppComponent</code>, and render it into the element matching its selector (<code>app-root</code> in index.html).</p>
+              <p class="tl">Bootstrap returns a Promise; if anything in construction throws, log it. This is the app&apos;s outermost error boundary.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">No NgModule in sight</strong>
+            <p>Before v14, every app was rooted in an <code>@NgModule</code> that declared components, imported other modules, and listed providers. <code>bootstrapApplication</code> deletes that ceremony: the root <em>component</em> plus a flat <em>providers</em> array is the entire application definition. In Angular 19 this standalone path is the default.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">"Bootstrap" really means "compile ahead of time, then run"</h2>
+        <p>The six lines above are the runtime step. The heavier work already happened at build time. Angular&apos;s compiler — <span class="term" data-definition="Ivy is Angular's compilation and rendering engine (default since v9). It compiles each component's template into imperative instruction functions and stores them in a static property on the component class.">Ivy</span> — reads every component&apos;s template during an <span class="term" data-definition="Ahead-of-Time compilation. Templates are compiled to JavaScript during the build, not in the browser. Errors surface at build time and no compiler ships to the client.">AOT</span> build and rewrites it into imperative instruction functions.</p>
+
+        <div class="flow-steps">
+          <div class="flow-step">
+            <div class="flow-step-num">1</div>
+            <p><strong>Template</strong><br>HTML with <code>@for</code>, bindings, components</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">2</div>
+            <p><strong>Ivy compiler</strong><br>emits <code>ɵɵelement</code>, <code>ɵɵtext</code>, <code>ɵɵproperty</code> calls</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">3</div>
+            <p><strong>Component class</strong><br>gains a static <code>ɵcmp</code> definition</p>
+          </div>
+          <div class="flow-arrow">→</div>
+          <div class="flow-step">
+            <div class="flow-step-num">4</div>
+            <p><strong>Runtime</strong><br>executes those instructions to build &amp; update the DOM</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">⚙️</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why this matters for you</strong>
+            <p>There is no template interpreter in the browser. Your template <em>is</em> compiled code by the time it runs. This is why template type errors fail your build, why Angular bundles are relatively lean, and why the runtime can be so aggressive about only touching the DOM nodes that actually changed.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The application config: providers are the app&apos;s wiring</h2>
+        <p>The second argument to <code>bootstrapApplication</code> is where you configure the root injector. This app registers exactly two things.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">app.config.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">import</span> { ApplicationConfig, provideZoneChangeDetection } <span class="code-keyword">from</span> <span class="code-string">'@angular/core'</span>;</span>
+<span class="code-line"><span class="code-keyword">import</span> { provideRouter } <span class="code-keyword">from</span> <span class="code-string">'@angular/router'</span>;</span>
+<span class="code-line"><span class="code-keyword">import</span> { routes } <span class="code-keyword">from</span> <span class="code-string">'./app.routes'</span>;</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-keyword">export const</span> appConfig: ApplicationConfig = {</span>
+<span class="code-line">  <span class="code-property">providers</span>: [<span class="code-function">provideZoneChangeDetection</span>({ <span class="code-property">eventCoalescing</span>: <span class="code-keyword">true</span> }), <span class="code-function">provideRouter</span>(routes)]</span>
+<span class="code-line">};</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl"><span class="term" data-definition="A helper function that returns a bundle of providers. The provide* naming convention replaced importing feature NgModules like RouterModule.forRoot().">provide*</span> functions are the standalone idiom: each returns a set of <span class="term" data-definition="A recipe telling the injector how to create a value for a given token — e.g. { provide: Router, useClass: Router }. Providers are what populate an injector.">providers</span> to merge into the root injector.</p>
+              <p class="tl"><code>provideZoneChangeDetection</code> installs the Zone.js-based change detection runtime, and <code>eventCoalescing: true</code> tells it to batch multiple DOM events fired in one task into a single change detection pass (Module 06).</p>
+              <p class="tl"><code>provideRouter(routes)</code> registers the router and its route table — even though this single-page app barely uses it, it is part of the wiring.</p>
+              <p class="tl">This flat array <em>is</em> the app&apos;s configuration. Everything else is discovered through the component tree and <code>providedIn: 'root'</code> services.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="badge-list">
+          <div class="badge-item">
+            <code class="badge-code">provideZoneChangeDetection</code>
+            <span class="badge-desc">Installs Zone.js change detection; <code>eventCoalescing</code> batches events into one CD run per task.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">provideRouter</code>
+            <span class="badge-desc">Registers the <code>Router</code>, route matching, and navigation services into the root injector.</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Trace: from URL to first paint</h2>
+        <p>Step through what actually happens when someone opens the page. Each step highlights the actor doing the work.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-actor-1","label":"Browser loads index.html and the compiled JS bundle, then runs main.ts."},
+          {"highlight":"flow-actor-2","label":"bootstrapApplication builds the root environment injector from appConfig.","packet":true,"from":"actor-1","to":"actor-2"},
+          {"highlight":"flow-actor-3","label":"The injector constructs AppComponent, resolving its inject() dependencies (ThemeService, ResumeService, ...).","packet":true,"from":"actor-2","to":"actor-3"},
+          {"highlight":"flow-actor-4","label":"Angular runs AppComponents compiled template instructions, creating the section components and DOM nodes.","packet":true,"from":"actor-3","to":"actor-4"},
+          {"highlight":"flow-actor-4","label":"First change detection pass renders bindings; ngAfterViewInit fires and the scroll-spy starts watching. First paint is done."}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-actor-1">
+              <div class="flow-actor-icon">🌐</div>
+              <span>Browser</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-2">
+              <div class="flow-actor-icon">🚀</div>
+              <span>bootstrap</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-3">
+              <div class="flow-actor-icon">💉</div>
+              <span>Injector</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-4">
+              <div class="flow-actor-icon">🌳</div>
+              <span>Component tree</span>
+            </div>
+          </div>
+          <div class="flow-packet" id="flow-packet"></div>
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to trace the boot sequence</div>
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+
+        <p>Every one of those actors gets its own module. Next: the unit that the whole tree is made of — the standalone component.</p>
+      </section>
+
+    </div>
+  </div>
+</section>

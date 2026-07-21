@@ -1,0 +1,175 @@
+<section class="module" id="module-2" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">02</span>
+      <h1 class="module-title">The component model</h1>
+      <p class="module-subtitle">A component is a class plus a decorator that tells the compiler how to turn it into a rendering unit. In v19 it stands alone — no module required.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Class + decorator = component</h2>
+        <p>An Angular component is nothing more than a TypeScript class annotated with the <span class="term" data-definition="A function prefixed with @ that attaches metadata to a class. @Component stores that metadata in a static ɵcmp field the Ivy runtime reads.">@Component</span> decorator. The class holds state and methods; the decorator holds the metadata the compiler needs — which HTML element to hook onto, what template to render, which other components the template is allowed to use.</p>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">🏷️</div>
+            <div>
+              <strong>selector</strong>
+              <p>The CSS selector Angular matches in host templates to instantiate this component — e.g. <code>app-root</code>.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">📄</div>
+            <div>
+              <strong>template / templateUrl</strong>
+              <p>The view, compiled by Ivy into instruction functions. Inline for small components, external file for large ones.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-3)">📦</div>
+            <div>
+              <strong>imports</strong>
+              <p>The exact list of components, directives, and pipes this template is permitted to reference.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The root component, decoded</h2>
+        <p>Here is the decorator on <code>AppComponent</code> — the composition root that assembles every page section.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">app.component.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">@Component</span>({</span>
+<span class="code-line">  <span class="code-property">selector</span>: <span class="code-string">'app-root'</span>,</span>
+<span class="code-line">  <span class="code-property">standalone</span>: <span class="code-keyword">true</span>,</span>
+<span class="code-line">  <span class="code-property">imports</span>: [</span>
+<span class="code-line">    CommonModule, HeroComponent, AboutComponent, ExperienceComponent,</span>
+<span class="code-line">    ProjectsComponent, QueryConsoleComponent, SkillsComponent,</span>
+<span class="code-line">    EducationComponent, ContactComponent,</span>
+<span class="code-line">  ],</span>
+<span class="code-line">  <span class="code-property">templateUrl</span>: <span class="code-string">'./app.component.html'</span>,</span>
+<span class="code-line">  <span class="code-property">styleUrl</span>: <span class="code-string">'./app.component.scss'</span>,</span>
+<span class="code-line">})</span>
+<span class="code-line"><span class="code-keyword">export class</span> <span class="code-function">AppComponent</span> <span class="code-keyword">implements</span> AfterViewInit {</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl">Wherever <code>&lt;app-root&gt;</code> appears (here, in index.html), instantiate this class and render its template inside.</p>
+              <p class="tl"><code>standalone: true</code> marks it as needing no NgModule. In v19 this is the default — writing it is now optional but explicit.</p>
+              <p class="tl">The <code>imports</code> array is the template&apos;s dependency allowlist: these nine symbols are the only components/directives its template may use. <code>CommonModule</code> brings pipes like <code>date</code> and <code>async</code>.</p>
+              <p class="tl">The view and its scoped styles live in external files — the convention for a large component. Ivy compiles both at build time.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">🔒</div>
+          <div class="callout-content">
+            <strong class="callout-title">Imports are a hard boundary</strong>
+            <p>If a template references a component that is not in its <code>imports</code> array, the build fails. This makes each component&apos;s dependencies <em>local and explicit</em> — the opposite of the old NgModule world, where a component could silently use anything the surrounding module happened to import. When you steer an AI to "add a component to this template," the imports array is what must change with it.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Composition, not inheritance</h2>
+        <p>The root template does almost nothing but place the section components in order. The tree <em>is</em> the layout. Each section is an independent, self-contained standalone component.</p>
+
+        <div class="file-tree">
+          <div class="ft-folder open">
+            <span class="ft-name">AppComponent</span>
+            <span class="ft-desc">composition root — selector app-root</span>
+            <div class="ft-children">
+              <div class="ft-file"><span class="ft-name">HeroComponent</span><span class="ft-desc">landing / typewriter</span></div>
+              <div class="ft-file"><span class="ft-name">AboutComponent</span><span class="ft-desc">README-style bio</span></div>
+              <div class="ft-file"><span class="ft-name">ExperienceComponent</span><span class="ft-desc">git-log timeline</span></div>
+              <div class="ft-file"><span class="ft-name">ProjectsComponent</span><span class="ft-desc">selected work</span></div>
+              <div class="ft-file"><span class="ft-name">QueryConsoleComponent</span><span class="ft-desc">live SQL console</span></div>
+              <div class="ft-file"><span class="ft-name">SkillsComponent</span><span class="ft-desc">command-palette filter</span></div>
+              <div class="ft-file"><span class="ft-name">EducationComponent</span><span class="ft-desc">foundations / certs</span></div>
+              <div class="ft-file"><span class="ft-name">ContactComponent</span><span class="ft-desc">closing CTA</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🌳</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why the tree shape matters</strong>
+            <p>Change detection walks this tree top-to-bottom (Module 06) and dependency injection resolves along it bottom-to-top (Module 05). The shape you compose here directly determines how those two systems behave. A flat composition root like this keeps both predictable.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Inline everything: a self-contained component</h2>
+        <p>Small components put template <em>and</em> styles inline in the decorator. Here is the entire typewriter — notice it also opts into a different change detection strategy.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">typewriter.component.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">@Component</span>({</span>
+<span class="code-line">  <span class="code-property">selector</span>: <span class="code-string">'app-typewriter'</span>,</span>
+<span class="code-line">  <span class="code-property">standalone</span>: <span class="code-keyword">true</span>,</span>
+<span class="code-line">  <span class="code-property">changeDetection</span>: ChangeDetectionStrategy.OnPush,</span>
+<span class="code-line">  <span class="code-property">template</span>: <span class="code-string">`&lt;span class="tw"&gt;{{ text() }}&lt;span class="blink-caret"&gt;&lt;/span&gt;&lt;/span&gt;`</span>,</span>
+<span class="code-line">  <span class="code-property">styles</span>: [<span class="code-string">`.tw { font-family: var(--font-mono); }`</span>],</span>
+<span class="code-line">})</span>
+<span class="code-line"><span class="code-keyword">export class</span> <span class="code-function">TypewriterComponent</span> <span class="code-keyword">implements</span> OnInit, OnDestroy {</span>
+<span class="code-line">  <span class="code-keyword">@Input</span>({ required: <span class="code-keyword">true</span> }) phrases: <span class="code-keyword">string</span>[] = [];</span>
+<span class="code-line">  <span class="code-keyword">readonly</span> text = <span class="code-function">signal</span>(<span class="code-string">''</span>);</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl">A tiny, focused component — template and styles are inline strings rather than files.</p>
+              <p class="tl"><span class="term" data-definition="A change detection strategy where Angular only checks the component when an input reference changes, an event fires inside it, a signal it reads changes, or markForCheck is called — instead of on every tick.">OnPush</span> opts this component out of default checking; it re-renders only when its signal <code>text</code> changes. We unpack this in Module 06.</p>
+              <p class="tl"><code>{{ text() }}</code> reads a <span class="term" data-definition="A reactive value container. Reading it (calling text()) registers a dependency; writing it notifies consumers. Covered fully in Module 04.">signal</span> in the template. Because it is a signal, OnPush knows precisely when to refresh this view.</p>
+              <p class="tl"><code>@Input({ required: true })</code> declares a mandatory input — the compiler errors if a parent forgets to pass <code>phrases</code>.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Styles are scoped by default</h2>
+        <p>That <code>.tw</code> rule in the typewriter does not leak to the rest of the page. Angular&apos;s default <span class="term" data-definition="View encapsulation: Angular rewrites a component's CSS selectors and adds unique attributes (like _ngcontent-abc) to its DOM so styles apply only within that component.">Emulated view encapsulation</span> rewrites each component&apos;s selectors and stamps its elements with a unique attribute, so component CSS behaves as if scoped — without needing native <span class="term" data-definition="A browser feature that attaches a hidden, style-isolated DOM subtree to an element. Angular can use it (ShadowDom encapsulation) but defaults to emulating the isolation instead.">Shadow DOM</span>.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-actor-1)">🎭</div>
+            <h4 class="pattern-title">Emulated (default)</h4>
+            <p class="pattern-desc">Selectors rewritten with attribute markers. Isolation without Shadow DOM. What this app uses.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">🌑</div>
+            <h4 class="pattern-title">ShadowDom</h4>
+            <p class="pattern-desc">Real browser Shadow DOM. True isolation, but global theming (CSS variables) must pierce the boundary.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">🌍</div>
+            <h4 class="pattern-title">None</h4>
+            <p class="pattern-desc">Styles go global, unscoped. Used deliberately for app-wide resets in <code>styles.scss</code>.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🎨</div>
+          <div class="callout-content">
+            <strong class="callout-title">How theming still works</strong>
+            <p>Scoped styles isolate <em>rules</em>, but <span class="term" data-definition="Native CSS variables like --accent, declared on :root, that any component can read with var(--accent). They cross encapsulation boundaries because they inherit through the DOM.">CSS custom properties</span> inherit through the DOM regardless of encapsulation. That is why every component can write <code>var(--accent)</code> and instantly respond when the theme flips — the subject of Module 04&apos;s <code>ThemeService</code>.</p>
+          </div>
+        </div>
+
+        <p>We have the units and the tree. Now: what actually goes <em>inside</em> a template, and how Angular&apos;s built-in control flow renders lists and conditions.</p>
+      </section>
+
+    </div>
+  </div>
+</section>

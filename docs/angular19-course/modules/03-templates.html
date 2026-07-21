@@ -1,0 +1,226 @@
+<section class="module" id="module-3" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">03</span>
+      <h1 class="module-title">Templates &amp; built-in control flow</h1>
+      <p class="module-subtitle">How binding syntax connects class state to the DOM, and how <code>@for</code> / <code>@if</code> / <code>@switch</code> replaced the old structural directives with compiled control flow.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Five ways to bind, one direction each</h2>
+        <p>Every character of dynamism in an Angular template is one of five binding forms. Each compiles to a specific Ivy instruction; there is no general expression evaluator at runtime.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-actor-1)">{{ }}</div>
+            <h4 class="pattern-title">Interpolation</h4>
+            <p class="pattern-desc"><code>{{ expr }}</code> — writes a string into a text node. Class → DOM.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">[ ]</div>
+            <h4 class="pattern-title">Property binding</h4>
+            <p class="pattern-desc"><code>[prop]="expr"</code> — sets a DOM property or component input. Class → DOM.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">( )</div>
+            <h4 class="pattern-title">Event binding</h4>
+            <p class="pattern-desc"><code>(event)="handler()"</code> — runs a method on a DOM/output event. DOM → class.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">[( )]</div>
+            <h4 class="pattern-title">Two-way</h4>
+            <p class="pattern-desc"><code>[(x)]</code> — sugar for a property binding + an <code>xChange</code> event. Both directions.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">[attr.]</div>
+            <h4 class="pattern-title">Attribute / class / style</h4>
+            <p class="pattern-desc"><code>[attr.x]</code>, <code>[class.y]</code>, <code>[style.z]</code> — bind to attributes, classes, styles when no DOM property exists.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🧩</div>
+          <div class="callout-content">
+            <strong class="callout-title">Property vs attribute</strong>
+            <p><code>[value]</code> sets the live DOM <em>property</em>; <code>[attr.aria-selected]</code> sets the HTML <em>attribute</em>. Angular exposes both because ARIA state, <code>data-*</code>, and SVG live in attribute-space with no matching JS property. This app uses <code>[attr.data-idx]</code> and <code>[attr.aria-selected]</code> for exactly that reason.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Four binding forms in one input</h2>
+        <p>The skills search box is a compact tour of the syntax — property, event, interpolation, and a two-way pattern split into its parts.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">skills.component.ts — template</span>
+            <pre><code><span class="code-line">&lt;<span class="code-tag">input</span> #box <span class="code-attr">class</span>=<span class="code-string">"cmd-input mono"</span> <span class="code-attr">type</span>=<span class="code-string">"text"</span></span>
+<span class="code-line">       [<span class="code-attr">ngModel</span>]=<span class="code-string">"query()"</span> (<span class="code-attr">ngModelChange</span>)=<span class="code-string">"onQuery($event)"</span></span>
+<span class="code-line">       (<span class="code-attr">keydown</span>)=<span class="code-string">"onKey($event)"</span></span>
+<span class="code-line">       <span class="code-attr">placeholder</span>=<span class="code-string">"Filter {{ rows.length }} skills…"</span> /&gt;</span>
+<span class="code-line">&lt;<span class="code-tag">span</span> <span class="code-attr">class</span>=<span class="code-string">"cmd-count mono"</span>&gt;{{ filtered().length }}&lt;/<span class="code-tag">span</span>&gt;</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl"><code>[ngModel]="query()"</code> — property binding pushing the <code>query</code> signal&apos;s value into the input. Instead of the usual <code>[(ngModel)]</code> two-way sugar, it is split manually.</p>
+              <p class="tl"><code>(ngModelChange)="onQuery($event)"</code> — the other half: on each keystroke, call <code>onQuery</code> with the new value, which writes the signal. Splitting the two-way binding lets the handler also reset the selection index.</p>
+              <p class="tl"><code>(keydown)="onKey($event)"</code> — event binding for arrow-key navigation; <code>$event</code> is the raw <code>KeyboardEvent</code>.</p>
+              <p class="tl"><code>{{ rows.length }}</code> and <code>{{ filtered().length }}</code> — interpolation, the second reading a signal so the count re-renders as results filter.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">🔁</div>
+          <div class="callout-content">
+            <strong class="callout-title"><code>[(x)]</code> is just <code>[x]</code> + <code>(xChange)</code></strong>
+            <p>Two-way binding is not magic — it is a naming convention. <code>[(ngModel)]="q"</code> desugars to <code>[ngModel]="q" (ngModelChange)="q = $event"</code>. Seeing it split here shows the seam: any two-way binding can be pulled apart when you need to intercept the update, exactly as this code does to reset the highlighted row.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading"><code>@for</code> and the mandatory <code>track</code></h2>
+        <p>Since v17, loops and conditionals are <strong>built-in blocks</strong> in the template — not directives. Here is the results list.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">skills.component.ts — @for</span>
+            <pre><code><span class="code-line"><span class="code-keyword">@for</span> (r <span class="code-keyword">of</span> filtered(); <span class="code-keyword">track</span> r.name; <span class="code-keyword">let</span> i = $index) {</span>
+<span class="code-line">  &lt;<span class="code-tag">li</span> <span class="code-attr">role</span>=<span class="code-string">"option"</span> [<span class="code-attr">attr.aria-selected</span>]=<span class="code-string">"i === index()"</span>&gt;</span>
+<span class="code-line">    &lt;<span class="code-tag">div</span> <span class="code-attr">class</span>=<span class="code-string">"cmd-row"</span> [<span class="code-attr">class.sel</span>]=<span class="code-string">"i === index()"</span></span>
+<span class="code-line">         (<span class="code-attr">mouseenter</span>)=<span class="code-string">"index.set(i)"</span>&gt; … &lt;/<span class="code-tag">div</span>&gt;</span>
+<span class="code-line">  &lt;/<span class="code-tag">li</span>&gt;</span>
+<span class="code-line">} <span class="code-keyword">@empty</span> {</span>
+<span class="code-line">  &lt;<span class="code-tag">li</span> <span class="code-attr">class</span>=<span class="code-string">"cmd-none mono"</span>&gt;// no symbols match&lt;/<span class="code-tag">li</span>&gt;</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl">Iterate <code>filtered()</code> — itself a signal, so the list re-renders whenever the filter recomputes.</p>
+              <p class="tl"><code>track r.name</code> is <strong>required</strong>. It gives each row a stable identity so Angular can match old DOM to new data across re-renders.</p>
+              <p class="tl"><code>let i = $index</code> aliases the built-in index variable; also available: <code>$count</code>, <code>$first</code>, <code>$last</code>, <code>$even</code>, <code>$odd</code>.</p>
+              <p class="tl"><code>@empty</code> renders when the collection is empty — replacing the old pattern of a sibling <code>*ngIf</code> guard.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Why <code>track</code> decides reuse vs. rebuild</h2>
+        <p>When the array changes, Angular diffs the new items against the tracked keys. Matching keys → the existing DOM node and its component state are <strong>reused</strong>, only bindings update. Missing keys → nodes are destroyed; new keys → nodes are created. Step through a filter operation:</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-actor-1","label":"filtered() recomputes to a new array after the user types a letter."},
+          {"highlight":"flow-actor-2","label":"@for diffs new items against existing DOM using track r.name as the identity key.","packet":true,"from":"actor-1","to":"actor-2"},
+          {"highlight":"flow-actor-3","label":"Rows whose track key still exists are REUSED — Angular only updates their bindings, keeping DOM and state.","packet":true,"from":"actor-2","to":"actor-3"},
+          {"highlight":"flow-actor-4","label":"Rows whose key vanished are destroyed; brand-new keys create fresh nodes. Minimal DOM churn."}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-actor-1">
+              <div class="flow-actor-icon">🧮</div>
+              <span>New array</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-2">
+              <div class="flow-actor-icon">🔑</div>
+              <span>track diff</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-3">
+              <div class="flow-actor-icon">♻️</div>
+              <span>Reuse nodes</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-4">
+              <div class="flow-actor-icon">🧱</div>
+              <span>Create / destroy</span>
+            </div>
+          </div>
+          <div class="flow-packet" id="flow-packet"></div>
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to see how track drives DOM reuse</div>
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-content">
+            <strong class="callout-title">The classic <code>track</code> mistake</strong>
+            <p>Tracking by object identity (<code>track item</code>) when the array is rebuilt from fresh objects — e.g. after a map or an HTTP response — makes every key look new, so Angular destroys and recreates every row on each change. That is the single most common Angular list-performance bug. Track by a stable domain id (<code>r.name</code> here), or by <code>$index</code> only for static lists.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading"><code>@switch</code>, and when <em>not</em> to reach for it</h2>
+        <p>The third control-flow block, <span class="term" data-definition="A template block that renders one of several @case branches based on strict === comparison to an expression, with an optional @default. Replaces *ngSwitch.">@switch</span>, picks one branch by strict equality — no fall-through, no <code>break</code>. This codebase never uses it, so the snippet below is <strong>illustrative</strong>: imagine the SQL console wanting different <em>markup</em> per token kind.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">illustrative — not in the repo</span>
+            <pre><code><span class="code-line"><span class="code-keyword">@switch</span> (token.c) {</span>
+<span class="code-line">  <span class="code-keyword">@case</span> (<span class="code-string">'tok-key'</span>) { &lt;<span class="code-tag">strong</span> <span class="code-attr">class</span>=<span class="code-string">"kw"</span>&gt;{{ token.t }}&lt;/<span class="code-tag">strong</span>&gt; }</span>
+<span class="code-line">  <span class="code-keyword">@case</span> (<span class="code-string">'tok-str'</span>) { &lt;<span class="code-tag">em</span> <span class="code-attr">class</span>=<span class="code-string">"str"</span>&gt;{{ token.t }}&lt;/<span class="code-tag">em</span>&gt; }</span>
+<span class="code-line">  <span class="code-keyword">@case</span> (<span class="code-string">'tok-fn'</span>)  { &lt;<span class="code-tag">a</span> <span class="code-attr">class</span>=<span class="code-string">"fn"</span>&gt;{{ token.t }}&lt;/<span class="code-tag">a</span>&gt; }</span>
+<span class="code-line">  <span class="code-keyword">@default</span>          { &lt;<span class="code-tag">span</span>&gt;{{ token.t }}&lt;/<span class="code-tag">span</span>&gt; }</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does</span>
+            <div class="translation-lines">
+              <p class="tl">Evaluate <code>token.c</code> once, then render the single <code>@case</code> whose value <code>===</code> it.</p>
+              <p class="tl">No fall-through: exactly one branch renders, so there is no <code>break</code> and no accidental double-render.</p>
+              <p class="tl"><code>@default</code> covers unmatched values — here, plain identifiers and operators.</p>
+              <p class="tl">Each branch is a full template region, so the cases can differ in <em>structure</em>, not just attributes.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <div class="callout-icon">🎯</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why the real console does <em>not</em> use <code>@switch</code></strong>
+            <p>Every token renders the same element and only the <em>class</em> differs. So the console writes one line — <code>&lt;span [class]="t.c"&gt;{{ t.t }}&lt;/span&gt;</code> — a plain class binding, not seven <code>@case</code> branches. Rule of thumb: reach for <code>@switch</code> when the branches produce <strong>different markup or components</strong>; reach for <code>[class]</code>/<code>[ngClass]</code> when only styling varies. Choosing the lighter tool is the mark of reading templates well.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Blocks, not directives</h2>
+        <p>Old Angular used <span class="term" data-definition="Directives like *ngIf and *ngFor that add or remove DOM. The asterisk was microsyntax that expanded into an ng-template. They had to be imported and were resolved at runtime.">structural directives</span> — <code>*ngIf</code>, <code>*ngFor</code>, <code>*ngSwitch</code> — imported from <code>CommonModule</code>. The new control flow is part of the template <em>language</em> itself.</p>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">⚡</div>
+            <div>
+              <strong>Nothing to import</strong>
+              <p><code>@if</code>/<code>@for</code>/<code>@switch</code> are compiler built-ins. No <code>CommonModule</code> dependency, no directive resolution step.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">🏎️</div>
+            <div>
+              <strong>Compiles to direct instructions</strong>
+              <p>The block lowers straight to conditional/loop instruction calls — no <code>ng-template</code> indirection, less overhead than the directive it replaces.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-5)">✅</div>
+            <div>
+              <strong><code>track</code> is enforced</strong>
+              <p>What used to be an optional <code>trackBy</code> function is now a required part of the syntax — the framework makes the fast path the default path.</p>
+            </div>
+          </div>
+        </div>
+
+        <p>Templates read state; the next question is what that state actually <em>is</em>. In this codebase it is signals — the reactive core.</p>
+      </section>
+
+    </div>
+  </div>
+</section>
