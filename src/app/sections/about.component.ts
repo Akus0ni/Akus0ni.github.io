@@ -11,7 +11,7 @@ import { STATS } from '../data/resume';
     <section id="about" class="wrap">
       <header class="s-head" appReveal>
         <span class="s-index mono">01</span>
-        <h2 class="s-title">whoami</h2>
+        <h2 class="s-title">Who am I</h2>
         <span class="s-file mono">README.md</span>
       </header>
 

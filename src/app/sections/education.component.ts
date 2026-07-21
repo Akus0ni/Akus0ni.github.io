@@ -35,13 +35,21 @@ import { EDUCATION, CERTS } from '../data/resume';
         <div class="col" appReveal [revealDelay]="100">
           <h3 class="col-h mono">// certifications</h3>
           @for (c of certs; track c.title) {
-            <div class="row">
+            <a class="row cert" [href]="c.link" target="_blank" rel="noopener"
+               [attr.aria-label]="'Verify certificate: ' + c.title + ' — opens in a new tab'">
               <div class="row-main">
-                <span class="row-title">{{ c.title }}</span>
-                <span class="row-sub">{{ c.org }}</span>
+                <span class="row-title">
+                  {{ c.title }}
+                  <svg class="ext" viewBox="0 0 24 24" width="13" height="13" fill="none"
+                       stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                       aria-hidden="true">
+                    <path d="M7 17 17 7M9 7h8v8"/>
+                  </svg>
+                </span>
+                <span class="row-sub">{{ c.org }} · <span class="verify mono">verify</span></span>
               </div>
               <span class="year mono">{{ c.when }}</span>
-            </div>
+            </a>
           }
         </div>
       </div>
@@ -71,6 +79,19 @@ import { EDUCATION, CERTS } from '../data/resume';
     .row-side { display: flex; flex-direction: column; align-items: flex-end; gap: .1rem; }
     .score { color: var(--teal); font-size: .82rem; }
     .year { color: var(--text-3); font-size: .82rem; }
+
+    /* clickable, verifiable certificate rows */
+    .cert { text-decoration: none; border-radius: 8px; transition: background .2s var(--ease); }
+    .cert .row-title {
+      display: inline-flex; align-items: center; gap: .4rem;
+      transition: color .2s var(--ease);
+    }
+    .cert .ext { color: var(--text-3); transition: color .2s var(--ease), transform .2s var(--ease-out); }
+    .verify { color: var(--accent); font-size: .78rem; }
+    .cert:hover .row-title { color: var(--accent); }
+    .cert:hover .ext { color: var(--accent); transform: translate(2px, -2px); }
+    .cert:hover .year { color: var(--text-2); }
+    .cert:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 
     @media (max-width: 720px) { .cols { grid-template-columns: 1fr; } }
   `],

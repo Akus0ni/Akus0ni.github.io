@@ -45,8 +45,6 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     { id: 'contact',    label: 'contact',    file: 'contact.sh',      icon: 'M4 5h16v14H4zM4 7l8 6 8-6' },
   ];
 
-  private observer?: IntersectionObserver;
-
   toggleTheme(): void { this.themeSvc.toggle(); }
   toggleMenu(): void { this.menuOpen.update((v) => !v); }
 
@@ -60,24 +58,53 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     return this.nav.find((n) => n.id === this.active())?.file ?? 'home.tsx';
   }
 
+  private ticking = false;
+
   @HostListener('window:scroll')
-  onScroll(): void { this.scrolled.set(window.scrollY > 20); }
-
-  ngAfterViewInit(): void {
-    const sections = this.nav
-      .map((n) => document.getElementById(n.id))
-      .filter((el): el is HTMLElement => !!el);
-
-    this.observer = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) this.active.set(e.target.id);
-        }
-      },
-      { rootMargin: '-45% 0px -50% 0px', threshold: 0 },
-    );
-    sections.forEach((s) => this.observer!.observe(s));
+  onScroll(): void {
+    this.scrolled.set(window.scrollY > 20);
+    if (this.ticking) return;
+    this.ticking = true;
+    requestAnimationFrame(() => {
+      this.updateActive();
+      this.ticking = false;
+    });
   }
 
-  ngOnDestroy(): void { this.observer?.disconnect(); }
+  @HostListener('window:resize')
+  onResize(): void { this.updateActive(); }
+
+  /**
+   * Deterministic scroll-spy: the active section is the last one whose top
+   * has crossed a reference line ~40% down the viewport. Recomputed from
+   * absolute scroll position on every frame, so it can never get "stuck"
+   * the way an IntersectionObserver's change-events can.
+   */
+  private updateActive(): void {
+    const line = window.innerHeight * 0.4;
+
+    // Bottom guard: if we've hit the end of the page, the last section wins
+    // even if it's too short to reach the reference line.
+    const atBottom =
+      window.innerHeight + window.scrollY >=
+      document.documentElement.scrollHeight - 4;
+    if (atBottom) {
+      this.active.set(this.nav[this.nav.length - 1].id);
+      return;
+    }
+
+    let current = this.nav[0].id;
+    for (const n of this.nav) {
+      const el = document.getElementById(n.id);
+      if (el && el.getBoundingClientRect().top <= line) current = n.id;
+    }
+    this.active.set(current);
+  }
+
+  ngAfterViewInit(): void {
+    // compute once on load (after layout settles)
+    requestAnimationFrame(() => this.updateActive());
+  }
+
+  ngOnDestroy(): void { /* no observers to clean up */ }
 }

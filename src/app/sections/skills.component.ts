@@ -2,14 +2,26 @@ import {
   Component, signal, computed, ElementRef, inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { RevealDirective } from '../directives/reveal.directive';
 import { SKILLS, SkillKind } from '../data/resume';
 
 interface Row {
   name: string; meta: string; note: string;
   group: string; kind: SkillKind; glyph: string; kindLabel: string;
-  first: boolean; // first item of its group -> render a group label
+  hay: string; // lowercased search haystack
 }
+
+// short chip labels for the long group names
+const SHORT: Record<string, string> = {
+  'Languages & Frameworks': 'Languages',
+  'Cloud — AWS & Azure': 'Cloud',
+  'Data & Analytics': 'Data',
+  'Frontend': 'Frontend',
+  'Integration & APIs': 'Integration',
+  'Security': 'Security',
+  'Practices': 'Practices',
+};
 
 const KIND: Record<SkillKind, { glyph: string; label: string }> = {
   method:    { glyph: 'M', label: 'method' },
@@ -24,7 +36,7 @@ const KIND: Record<SkillKind, { glyph: string; label: string }> = {
 @Component({
   selector: 'app-skills',
   standalone: true,
-  imports: [CommonModule, RevealDirective],
+  imports: [CommonModule, FormsModule, RevealDirective],
   template: `
     <section id="skills" class="wrap">
       <header class="s-head" appReveal>
@@ -33,54 +45,72 @@ const KIND: Record<SkillKind, { glyph: string; label: string }> = {
         <span class="s-file mono">skills.ts</span>
       </header>
 
-      <div class="ac" appReveal [revealDelay]="80">
-        <!-- editor context line that "triggers" the suggestion widget -->
-        <div class="ac-code mono">
-          <div class="ac-line"><span class="tok-com">// intellisense — {{ rows.length }} symbols on 'akash'</span></div>
-          <div class="ac-line">
-            <span class="tok-key">const</span>&nbsp;<span class="tok-teal">akash</span>&nbsp;=&nbsp;<span class="tok-key">new</span>&nbsp;<span class="tok-type">Engineer</span>();
-          </div>
-          <div class="ac-line">
-            <span class="tok-teal">akash</span>.<span class="typed" [attr.data-kind]="selected().kind">{{ selected().name }}</span><span class="caret" aria-hidden="true"></span>
-          </div>
+      <div class="cmd" appReveal [revealDelay]="80">
+        <!-- palette invocation hint -->
+        <div class="cmd-caption mono">
+          <span class="tok-com">// press to search symbols</span>
+          <span class="kbd">Ctrl</span><span class="kbd">Shift</span><span class="kbd">P</span>
         </div>
 
-        <!-- the suggestion widget -->
-        <div class="ac-widget">
-          <ul class="ac-list" role="listbox" aria-label="Skills" tabindex="0"
-              (keydown)="onKey($event)">
-            @for (r of rows; track r.name; let i = $index) {
-              @if (r.first) { <li class="ac-grp" role="presentation">{{ r.group }}</li> }
+        <div class="cmd-panel">
+          <!-- search bar -->
+          <div class="cmd-bar">
+            <svg class="cmd-search" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+            <input #box class="cmd-input mono" type="text"
+                   [ngModel]="query()" (ngModelChange)="onQuery($event)"
+                   (keydown)="onKey($event)"
+                   placeholder="Filter 41 skills — try 'aws', 'security', 'angular'…"
+                   aria-label="Filter skills" autocomplete="off" spellcheck="false" />
+            <span class="cmd-count mono">{{ filtered().length }}</span>
+          </div>
+
+          <!-- category quick-filters -->
+          <div class="cmd-cats" role="tablist" aria-label="Filter by category">
+            <button class="cat-btn" role="tab" [class.on]="activeCat() === null"
+                    [attr.aria-selected]="activeCat() === null" (click)="setCat(null)">
+              All <span class="cat-n mono">{{ rows.length }}</span>
+            </button>
+            @for (c of cats; track c.group) {
+              <button class="cat-btn" role="tab" [attr.data-kind]="c.kind"
+                      [class.on]="activeCat() === c.group"
+                      [attr.aria-selected]="activeCat() === c.group" (click)="setCat(c.group)">
+                {{ c.short }} <span class="cat-n mono">{{ c.count }}</span>
+              </button>
+            }
+          </div>
+
+          <!-- results -->
+          <ul class="cmd-list" role="listbox" aria-label="Skills">
+            @for (r of filtered(); track r.name; let i = $index) {
               <li role="option" [attr.aria-selected]="i === index()">
-                <button class="ac-row" [class.sel]="i === index()"
-                        [attr.data-idx]="i"
-                        (mouseenter)="index.set(i)" (focus)="index.set(i)"
-                        (click)="index.set(i)">
-                  <span class="ac-ico" [attr.data-kind]="r.kind">{{ r.glyph }}</span>
-                  <span class="ac-name">{{ r.name }}</span>
-                  <span class="ac-meta mono">{{ r.meta }}</span>
-                </button>
+                <div class="cmd-row" [class.sel]="i === index()" [attr.data-idx]="i"
+                     (mouseenter)="index.set(i)">
+                  <span class="cmd-ico" [attr.data-kind]="r.kind">{{ r.glyph }}</span>
+                  <div class="cmd-main">
+                    <p class="cmd-name">
+                      <span class="mono">{{ r.name }}</span>
+                      <span class="cmd-cat" [attr.data-kind]="r.kind">{{ r.group }}</span>
+                    </p>
+                    <p class="cmd-note">{{ r.note }}</p>
+                  </div>
+                  <span class="cmd-meta mono">{{ r.meta }}</span>
+                </div>
+              </li>
+            } @empty {
+              <li class="cmd-none mono">
+                <span class="tok-com">// no symbols match “{{ query() }}”</span>
               </li>
             }
           </ul>
 
-          <!-- docs flyout for the highlighted symbol -->
-          <aside class="ac-doc">
-            <div class="ac-doc-head">
-              <span class="ac-ico big" [attr.data-kind]="selected().kind">{{ selected().glyph }}</span>
-              <div>
-                <p class="ac-doc-name">{{ selected().name }}</p>
-                <p class="ac-doc-kind mono">{{ selected().kindLabel }} · {{ selected().group }}</p>
-              </div>
-            </div>
-            <p class="ac-sig mono"><span class="tok-teal">akash</span>.<span class="tok-fn">{{ selected().name }}</span>: <span class="tok-str">"{{ selected().meta }}"</span></p>
-            <p class="ac-note">{{ selected().note }}</p>
-          </aside>
+          <div class="cmd-foot mono">
+            <span><span class="kbd sm">↑</span><span class="kbd sm">↓</span> navigate</span>
+            <span>{{ filtered().length }} / {{ rows.length }} symbols</span>
+          </div>
         </div>
-
-        <p class="ac-hint mono">
-          <span class="tok-com">// hover a symbol, or focus the list and press ↑ ↓ to browse</span>
-        </p>
       </div>
     </section>
   `,
@@ -94,84 +124,123 @@ const KIND: Record<SkillKind, { glyph: string; label: string }> = {
     .s-title { font-size: clamp(1.5rem, 4vw, 2.1rem); }
     .s-file { margin-left: auto; color: var(--text-3); font-size: .78rem; }
 
-    .ac-code {
-      background: var(--bg-inset); border: 1px solid var(--border);
-      border-radius: 12px 12px 0 0; border-bottom: none;
-      padding: .9rem 1.1rem; font-size: clamp(.8rem, 1.6vw, .92rem); line-height: 1.9;
+    .cmd-caption {
+      display: flex; align-items: center; gap: .4rem; margin-bottom: .7rem;
+      font-size: .78rem; color: var(--text-3);
     }
-    .ac-line { white-space: nowrap; overflow-x: auto; }
-    .typed { color: var(--lav); font-weight: 600; }
-    .typed[data-kind='class'] { color: var(--amber); }
-    .typed[data-kind='field'] { color: var(--blue); }
-    .typed[data-kind='variable'] { color: var(--teal); }
-    .typed[data-kind='interface'] { color: var(--green); }
-    .typed[data-kind='event'] { color: var(--coral); }
-    .typed[data-kind='snippet'] { color: var(--amber); }
-    .caret {
-      display: inline-block; width: .55ch; height: 1.05em; transform: translateY(2px);
-      background: var(--accent); margin-left: 1px; animation: blink 1s steps(1) infinite;
+    .cmd-caption .tok-com { margin-right: auto; }
+    .kbd {
+      font-family: var(--font-mono); font-size: .68rem; color: var(--text-2);
+      background: var(--bg-3); border: 1px solid var(--border);
+      border-bottom-width: 2px; border-radius: 5px; padding: .08rem .38rem;
+    }
+    .kbd.sm { font-size: .62rem; padding: .02rem .3rem; }
+
+    .cmd-panel {
+      border: 1px solid var(--accent); border-radius: 12px; overflow: hidden;
+      background: var(--bg-2); box-shadow: var(--shadow-2);
     }
 
-    .ac-widget {
-      display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
-      border: 1px solid var(--accent); border-radius: 0 0 12px 12px;
-      background: var(--bg-2); overflow: hidden;
-      box-shadow: var(--shadow-2);
+    .cmd-bar {
+      display: flex; align-items: center; gap: .6rem;
+      padding: .7rem .9rem; border-bottom: 1px solid var(--border);
+      background: var(--bg-3);
+    }
+    .cmd-search { color: var(--text-3); flex: none; }
+    .cmd-input {
+      flex: 1; min-width: 0; background: none; border: none; outline: none;
+      color: var(--text); font-size: .9rem;
+    }
+    .cmd-input::placeholder { color: var(--text-3); }
+    .cmd-count {
+      flex: none; font-size: .72rem; color: var(--accent-contrast);
+      background: var(--accent); border-radius: 20px; padding: .06rem .5rem; font-weight: 600;
     }
 
-    .ac-list {
-      max-height: 360px; overflow-y: auto; padding: .35rem;
-      border-right: 1px solid var(--border); outline: none;
+    .cmd-cats {
+      display: flex; gap: .4rem; padding: .6rem .7rem; overflow-x: auto;
+      border-bottom: 1px solid var(--border); background: var(--bg-2);
+      scrollbar-width: none;
     }
-    .ac-list:focus-visible { box-shadow: inset 0 0 0 2px var(--ring); border-radius: 6px; }
-    .ac-grp {
-      font-family: var(--font-mono); font-size: .66rem; letter-spacing: .12em;
-      text-transform: uppercase; color: var(--text-3);
-      padding: .7rem .6rem .3rem; position: sticky; top: 0;
-      background: var(--bg-2); z-index: 1;
+    .cmd-cats::-webkit-scrollbar { display: none; }
+    .cat-btn {
+      display: inline-flex; align-items: center; gap: .4rem; flex: none;
+      font-size: .76rem; color: var(--text-2);
+      padding: .3rem .65rem; border-radius: 20px;
+      border: 1px solid var(--border); background: var(--bg-3);
+      transition: color .18s var(--ease), border-color .18s var(--ease), background .18s var(--ease);
     }
-    .ac-row {
-      display: flex; align-items: center; gap: .6rem; width: 100%;
-      padding: .4rem .55rem; border-radius: 6px; text-align: left;
-      color: var(--text-2); transition: background .12s var(--ease);
+    .cat-btn:hover { color: var(--text); border-color: var(--text-3); }
+    .cat-n { font-size: .64rem; color: var(--text-3); }
+    .cat-btn.on {
+      color: var(--accent); border-color: color-mix(in oklab, var(--accent) 55%, var(--border));
+      background: color-mix(in oklab, var(--accent) 12%, transparent);
     }
-    .ac-row.sel { background: color-mix(in oklab, var(--accent) 16%, transparent); color: var(--text); }
-    .ac-name {
-      font-family: var(--font-mono); font-size: .84rem; color: var(--text);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .ac-meta { margin-left: auto; font-size: .7rem; color: var(--text-3); white-space: nowrap; flex: none; }
+    .cat-btn.on .cat-n { color: var(--accent); }
+    .cat-btn[data-kind='method'].on    { color: var(--lav);   border-color: color-mix(in oklab, var(--lav) 55%, var(--border));   background: color-mix(in oklab, var(--lav) 12%, transparent); }
+    .cat-btn[data-kind='class'].on     { color: var(--amber); border-color: color-mix(in oklab, var(--amber) 55%, var(--border)); background: color-mix(in oklab, var(--amber) 12%, transparent); }
+    .cat-btn[data-kind='field'].on     { color: var(--blue);  border-color: color-mix(in oklab, var(--blue) 55%, var(--border));  background: color-mix(in oklab, var(--blue) 12%, transparent); }
+    .cat-btn[data-kind='variable'].on  { color: var(--teal);  border-color: color-mix(in oklab, var(--teal) 55%, var(--border));  background: color-mix(in oklab, var(--teal) 12%, transparent); }
+    .cat-btn[data-kind='interface'].on { color: var(--green); border-color: color-mix(in oklab, var(--green) 55%, var(--border)); background: color-mix(in oklab, var(--green) 12%, transparent); }
+    .cat-btn[data-kind='event'].on     { color: var(--coral); border-color: color-mix(in oklab, var(--coral) 55%, var(--border)); background: color-mix(in oklab, var(--coral) 12%, transparent); }
+    .cat-btn[data-kind='snippet'].on   { color: var(--amber); border-color: color-mix(in oklab, var(--amber) 55%, var(--border)); background: color-mix(in oklab, var(--amber) 12%, transparent); }
+    .cat-btn[data-kind].on .cat-n { color: inherit; }
 
-    .ac-ico {
-      flex: none; display: grid; place-items: center;
-      width: 18px; height: 18px; border-radius: 5px;
-      font-family: var(--font-mono); font-size: .66rem; font-weight: 700;
+    .cmd-list { max-height: 430px; overflow-y: auto; padding: .3rem; }
+
+    .cmd-row {
+      display: flex; align-items: flex-start; gap: .7rem;
+      padding: .55rem .6rem; border-radius: 8px; cursor: default;
+      transition: background .12s var(--ease);
+    }
+    .cmd-row.sel { background: color-mix(in oklab, var(--accent) 14%, transparent); }
+
+    .cmd-ico {
+      flex: none; margin-top: 1px; display: grid; place-items: center;
+      width: 20px; height: 20px; border-radius: 5px;
+      font-family: var(--font-mono); font-size: .68rem; font-weight: 700;
       color: var(--bg); background: var(--lav);
     }
-    .ac-ico[data-kind='class'] { background: var(--amber); }
-    .ac-ico[data-kind='field'] { background: var(--blue); }
-    .ac-ico[data-kind='variable'] { background: var(--teal); }
-    .ac-ico[data-kind='interface'] { background: var(--green); }
-    .ac-ico[data-kind='event'] { background: var(--coral); }
-    .ac-ico[data-kind='snippet'] { background: var(--amber); }
-    .ac-ico.big { width: 30px; height: 30px; border-radius: 8px; font-size: .95rem; }
+    .cmd-ico[data-kind='class'] { background: var(--amber); }
+    .cmd-ico[data-kind='field'] { background: var(--blue); }
+    .cmd-ico[data-kind='variable'] { background: var(--teal); }
+    .cmd-ico[data-kind='interface'] { background: var(--green); }
+    .cmd-ico[data-kind='event'] { background: var(--coral); }
+    .cmd-ico[data-kind='snippet'] { background: var(--amber); }
 
-    .ac-doc { padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: .7rem; }
-    .ac-doc-head { display: flex; align-items: center; gap: .7rem; }
-    .ac-doc-name { font-family: var(--font-mono); font-weight: 600; font-size: 1rem; color: var(--text); }
-    .ac-doc-kind { font-size: .72rem; color: var(--text-3); }
-    .ac-sig {
-      font-size: .82rem; padding: .55rem .7rem; border-radius: 8px;
-      background: var(--bg-inset); border: 1px solid var(--border-soft);
-      white-space: nowrap; overflow-x: auto;
+    .cmd-main { min-width: 0; flex: 1; }
+    .cmd-name {
+      display: flex; align-items: center; gap: .55rem; flex-wrap: wrap;
+      font-size: .88rem; color: var(--text); line-height: 1.4;
     }
-    .ac-note { color: var(--text-2); font-size: .92rem; line-height: 1.55; }
+    .cmd-cat {
+      font-family: var(--font-mono); font-size: .62rem; letter-spacing: .02em;
+      color: var(--text-2); border: 1px solid var(--border);
+      border-radius: 20px; padding: .02rem .45rem; white-space: nowrap;
+    }
+    .cmd-cat[data-kind='method']    { color: var(--lav);   border-color: color-mix(in oklab, var(--lav) 40%, var(--border)); }
+    .cmd-cat[data-kind='class']     { color: var(--amber); border-color: color-mix(in oklab, var(--amber) 40%, var(--border)); }
+    .cmd-cat[data-kind='field']     { color: var(--blue);  border-color: color-mix(in oklab, var(--blue) 40%, var(--border)); }
+    .cmd-cat[data-kind='variable']  { color: var(--teal);  border-color: color-mix(in oklab, var(--teal) 40%, var(--border)); }
+    .cmd-cat[data-kind='interface'] { color: var(--green); border-color: color-mix(in oklab, var(--green) 40%, var(--border)); }
+    .cmd-cat[data-kind='event']     { color: var(--coral); border-color: color-mix(in oklab, var(--coral) 40%, var(--border)); }
+    .cmd-cat[data-kind='snippet']   { color: var(--amber); border-color: color-mix(in oklab, var(--amber) 40%, var(--border)); }
 
-    .ac-hint { margin-top: 1rem; font-size: .78rem; }
+    .cmd-note { font-size: .8rem; color: var(--text-2); line-height: 1.45; margin-top: .1rem; }
+    .cmd-meta { flex: none; font-size: .72rem; color: var(--text-3); margin-top: 2px; white-space: nowrap; }
 
-    @media (max-width: 720px) {
-      .ac-widget { grid-template-columns: 1fr; }
-      .ac-list { max-height: 260px; border-right: none; border-bottom: 1px solid var(--border); }
+    .cmd-none { padding: 1.4rem .8rem; text-align: center; font-size: .85rem; }
+
+    .cmd-foot {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: .5rem .9rem; border-top: 1px solid var(--border);
+      background: var(--bg-3); font-size: .7rem; color: var(--text-3);
+    }
+    .cmd-foot .kbd { margin-right: 2px; }
+
+    @media (max-width: 560px) {
+      .cmd-meta { display: none; }
+      .cmd-list { max-height: 380px; }
     }
   `],
 })
@@ -179,21 +248,50 @@ export class SkillsComponent {
   private host = inject(ElementRef<HTMLElement>);
 
   readonly rows: Row[] = SKILLS.flatMap((g) =>
-    g.items.map((it, idx) => ({
+    g.items.map((it) => ({
       ...it,
       group: g.group,
       kind: g.kind,
       glyph: KIND[g.kind].glyph,
       kindLabel: KIND[g.kind].label,
-      first: idx === 0,
+      hay: `${it.name} ${it.meta} ${it.note} ${g.group} ${KIND[g.kind].label}`.toLowerCase(),
     })),
   );
 
+  // one quick-filter chip per group, with a short label + count
+  readonly cats = SKILLS.map((g) => ({
+    group: g.group,
+    kind: g.kind,
+    short: SHORT[g.group] ?? g.group,
+    count: g.items.length,
+  }));
+
+  readonly query = signal('');
+  readonly activeCat = signal<string | null>(null);
   readonly index = signal(0);
-  readonly selected = computed(() => this.rows[this.index()]);
+
+  readonly filtered = computed<Row[]>(() => {
+    const q = this.query().trim().toLowerCase();
+    const cat = this.activeCat();
+    return this.rows.filter(
+      (r) => (!cat || r.group === cat) && (!q || r.hay.includes(q)),
+    );
+  });
+
+  onQuery(v: string): void {
+    this.query.set(v);
+    this.index.set(0);
+  }
+
+  setCat(group: string | null): void {
+    // clicking the active chip clears it back to "All"
+    this.activeCat.update((cur) => (cur === group ? null : group));
+    this.index.set(0);
+  }
 
   onKey(ev: KeyboardEvent): void {
-    const last = this.rows.length - 1;
+    const last = this.filtered().length - 1;
+    if (last < 0) return;
     let handled = true;
     switch (ev.key) {
       case 'ArrowDown': this.index.update((i) => Math.min(last, i + 1)); break;

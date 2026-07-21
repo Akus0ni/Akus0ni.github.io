@@ -42,8 +42,8 @@ export interface SkillGroup { group: string; kind: SkillKind; items: Skill[]; }
 export interface Credential {
   title: string;
   org: string;
-  detail: string;
   when: string;
+  link: string;
 }
 
 export const LINKS: SocialLinks = {
@@ -277,8 +277,18 @@ export const EDUCATION = [
 ];
 
 export const CERTS: Credential[] = [
-  { title: 'Introduction to Cloud Computing', org: 'Certification', detail: '', when: 'Jun 2025' },
-  { title: 'Prompt Engineering — How to Talk to the AI', org: 'Certification', detail: '', when: 'Jun 2025' },
+  {
+    title: 'Introduction to Cloud Computing',
+    org: 'Coursera',
+    when: 'Jan 2024',
+    link: 'https://coursera.org/share/9f9dadcd3bd598680ca162b99c59422a',
+  },
+  {
+    title: 'Prompt Engineering — How to Talk to the AI',
+    org: 'LinkedIn Learning',
+    when: 'Aug 2025',
+    link: 'https://www.linkedin.com/learning/certificates/9cd04a21d015da0d47760d274d6550121ff2176f000d811516337fe0329a62fe',
+  },
 ];
 
 /** Architecture diagram nodes for the signature hero pipeline (AI SaaS stack). */

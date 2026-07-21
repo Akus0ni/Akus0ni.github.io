@@ -57,7 +57,7 @@ import { LINKS } from '../data/resume';
             <span class="scan"></span>
           </div>
           <figcaption class="pf-tags">
-            <span>Raipur, IN</span><span>· UTC+5:30</span><span class="accent">· let's build something</span>
+            <span>Raipur, IN</span><span>· UTC+5:30</span><span>· <a class="pf-cta" href="#contact">let's build something <span class="ar" aria-hidden="true">→</span></a></span>
           </figcaption>
         </figure>
       </div>
@@ -181,6 +181,10 @@ import { LINKS } from '../data/resume';
       padding: .6rem .85rem; font-family: var(--font-mono);
       font-size: .72rem; color: var(--text-3); border-top: 1px solid var(--border);
     }
+    .pf-cta { color: var(--accent); transition: color .2s var(--ease); }
+    .pf-cta .ar { display: inline-block; transition: transform .2s var(--ease-out); }
+    .pf-cta:hover { text-decoration: underline; text-underline-offset: 3px; }
+    .pf-cta:hover .ar { transform: translateX(3px); }
 
     /* signature */
     .signature {
