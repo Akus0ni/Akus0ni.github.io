@@ -16,7 +16,7 @@ import { LINKS } from '../data/resume';
         <div class="identity">
           <p class="eyebrow load load-1">~/akash-soni · <span class="branch">main</span></p>
 
-          <pre class="id-code load load-2" aria-hidden="true"><span class="tok-com">// available for senior full-stack & cloud roles</span>
+          <pre class="id-code load load-2" aria-hidden="true"><span class="tok-com">// available for backend, full-stack and/or cloud roles</span>
 <span class="tok-key">public sealed class</span> <span class="tok-type">Akash</span> : <span class="tok-type">SoftwareEngineer</span></pre>
 
           <h1 class="name load load-3">Akash&nbsp;Soni</h1>

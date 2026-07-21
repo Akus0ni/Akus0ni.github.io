@@ -27,7 +27,7 @@ import { LINKS } from '../data/resume';
           </div>
           <div class="term-body mono">
             <p class="tl"><span class="prompt">akash&#64;portfolio</span>:<span class="path">~</span>$ ./contact.sh --hire</p>
-            <p class="tl out"><span class="ok">✔</span> open to senior full-stack & cloud engineering roles</p>
+            <p class="tl out"><span class="ok">✔</span> open to backend, full-stack and/or cloud engineering roles</p>
             <p class="tl out"><span class="ok">✔</span> {{ links.location }} · remote-friendly · UTC+5:30</p>
             <p class="tl"><span class="prompt">akash&#64;portfolio</span>:<span class="path">~</span>$ ls ./channels</p>
 
