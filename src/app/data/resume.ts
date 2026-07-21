@@ -1,6 +1,6 @@
 /**
  * Single source of truth for portfolio content, derived from
- * Akash Soni's resume. Swap the LINKS placeholders with real URLs.
+ * Akash Soni's resume.
  */
 
 export interface SocialLinks {
@@ -51,7 +51,7 @@ export const LINKS: SocialLinks = {
   email: 'asoni7667@gmail.com',
   linkedin: 'https://www.linkedin.com/in/akus0ni/',
   github: 'https://github.com/Akus0ni',
-  resume: 'media/Akash_Soni_Resume.pdf',
+  resume: 'media/Akash_Soni_Resume_SE.pdf',
   location: 'Raipur, Chhattisgarh, India',
 };
 
