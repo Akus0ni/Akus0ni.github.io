@@ -49,7 +49,7 @@ const KIND: Record<SkillKind, { glyph: string; label: string }> = {
             <input #box class="cmd-input mono" type="text"
                    [ngModel]="query()" (ngModelChange)="onQuery($event)"
                    (keydown)="onKey($event)"
-                   placeholder="Filter 41 skills — try 'aws', 'security', 'angular'…"
+                   placeholder="Filter {{ rows.length }} skills — try 'aws', 'security', 'angular'…"
                    aria-label="Filter skills" autocomplete="off" spellcheck="false" />
             <span class="cmd-count mono">{{ filtered().length }}</span>
           </div>

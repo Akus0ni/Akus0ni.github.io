@@ -119,17 +119,17 @@ export const ROLES: Role[] = [
   },
   {
     company: 'eGain Communications',
-    title: 'Software Engineer (Professional Engineer)',
+    title: 'Software Engineer',
     location: 'Pune, India',
     period: 'Sep 2021 — May 2025',
     from: '2021-09',
     to: '2025-05',
     scope: 'refactor(analytics): migrate SSAS analytics layer to AWS Redshift',
-    stack: ['C#/.NET', 'AWS Redshift', 'Lambda', 'EC2', 'SSRS'],
+    stack: ['.NET Framework 4.8', '.Net Core', 'AWS Redshift', 'Apache NiFi', 'Lambda', 'EC2', 'SSRS'],
     points: [
-      'Designed and maintained high-throughput integration APIs in C#/.NET.',
-      'Led the service-oriented platform modernization of the analytics layer, migrating from SSAS to AWS Redshift.',
-      'Automated operational workflows using AWS Lambda, EC2, and Secrets Manager.',
+      'Designed and maintained high-throughput integration APIs in C#.',
+      'Worked on the service-oriented platform modernization of the analytics layer, migrating from SSAS to AWS Redshift — working with Apache NiFi data flows.',
+      'Automated operational workflows using .Net Core, AWS Lambda, EC2, and Secrets Manager.',
       'Produced and customized SSRS reports delivering stakeholder-facing insights.',
     ],
   },
@@ -186,12 +186,12 @@ export const PROJECTS: Project[] = [
     name: 'Analytics Platform Modernization',
     kind: 'SSAS → AWS Redshift migration',
     blurb:
-      'Led the migration of enterprise analytics from a legacy SSAS stack to AWS Redshift.',
+      'Worked on the migration of enterprise analytics from a legacy SSAS stack to AWS Redshift.',
     points: [
       'Redesigned ETL pipelines and refactored the data-access layer.',
       'Introduced automated validation to de-risk the cutover.',
     ],
-    tags: ['AWS Redshift', 'ETL', 'C#/.NET'],
+    tags: ['AWS Redshift', 'Apache NiFi', 'ETL', 'C#/.NET'],
   },
   {
     id: 'jwt-hardening',
@@ -215,7 +215,8 @@ export const SKILLS: SkillGroup[] = [
     kind: 'method',
     items: [
       { name: 'CSharp', meta: '.NET · 6+ yrs', note: 'Primary language across every role — services, integrations, CLIs and desktop add-ins.' },
-      { name: 'DotNet', meta: 'core · mvc', note: '.NET Core services and .NET MVC web apps in production.' },
+      { name: 'DotNet.Core', meta: 'core', note: '.NET Core services and Web APIs in production.' },
+      { name: 'DotNet.Framework', meta: '4.8', note: 'Built and maintained the eGain analytics platform on classic .NET Framework 4.8.' },
       { name: 'SQL', meta: 'expert', note: 'Database engineering, query tuning and data modeling — a core strength.' },
       { name: 'TypeScript', meta: 'stable', note: 'Typed front-ends (this site) and Node Lambda handlers.' },
       { name: 'JavaScript', meta: 'stable', note: 'Browser and serverless runtimes.' },
@@ -249,6 +250,7 @@ export const SKILLS: SkillGroup[] = [
       { name: 'SSRS', meta: 'reporting', note: 'Customized, stakeholder-facing reports.' },
       { name: 'EtlPipelines', meta: 'prod', note: 'Redesigned pipelines and added automated validation for the cutover.' },
       { name: 'SQLite', meta: 'embedded', note: 'PTI Raw files transformed into queryable SQLite databases.' },
+      { name: 'ApacheNiFi', meta: 'used', note: "Used in the SSAS→Redshift migration under an architect's design — not the author of the flow." },
     ],
   },
   {
@@ -291,6 +293,11 @@ export const SKILLS: SkillGroup[] = [
     short: 'Practices',
     kind: 'snippet',
     items: [
+      { name: 'SolidPrinciples', meta: 'applied', note: 'Applied SOLID design principles across services throughout my career.' },
+      { name: 'SystemDesign', meta: 'design', note: 'System-design principles for scalable, maintainable services.' },
+      { name: 'Microservices', meta: 'architecture', note: 'Service-oriented / microservices architecture on platform modernization.' },
+      { name: 'TDD', meta: 'automated tests', note: "Test-driven development — automated tests that define a feature's behavior first." },
+      { name: 'DSA', meta: 'fundamentals', note: 'Data structures & algorithms as everyday problem-solving fundamentals.' },
       { name: 'CloudArchitecture', meta: 'design', note: 'Architected serverless stacks end-to-end.' },
       { name: 'Troubleshooting', meta: 'production', note: 'Hands-on technical troubleshooting under real load.' },
       { name: 'StakeholderMgmt', meta: 'delivery', note: 'Delivered outcomes that map to stakeholder goals.' },
