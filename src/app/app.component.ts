@@ -40,7 +40,7 @@ export class AppComponent implements AfterViewInit, OnDestroy {
     { id: 'about',      label: 'about',      file: 'README.md',       icon: 'M6 3h9l3 3v15H6zM14 3v4h4' },
     { id: 'experience', label: 'experience', file: 'git.log',         icon: 'M6 3v12a3 3 0 0 0 3 3h6M6 3a2 2 0 1 0 .01 0M15 18a2 2 0 1 0 .01 0' },
     { id: 'projects',   label: 'projects',   file: 'projects/',       icon: 'M3 7l2-3h5l2 3h7v12H3z' },
-    { id: 'skills',     label: 'skills',     file: 'Akash.csproj',    icon: 'M9 6l-5 6 5 6M15 6l5 6-5 6' },
+    { id: 'skills',     label: 'skills',     file: 'skills.ts',       icon: 'M9 6l-5 6 5 6M15 6l5 6-5 6' },
     { id: 'education',  label: 'education',   file: 'certs/',          icon: 'M12 4 2 9l10 5 10-5zM6 12v5c0 1 3 3 6 3s6-2 6-3v-5' },
     { id: 'contact',    label: 'contact',    file: 'contact.sh',      icon: 'M4 5h16v14H4zM4 7l8 6 8-6' },
   ];

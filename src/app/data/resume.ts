@@ -33,10 +33,11 @@ export interface Project {
   featured?: boolean;
 }
 
-export interface SkillGroup {
-  group: string;
-  items: { name: string; version: string }[];
-}
+export type SkillKind =
+  | 'method' | 'class' | 'field' | 'variable' | 'interface' | 'event' | 'snippet';
+
+export interface Skill { name: string; meta: string; note: string; }
+export interface SkillGroup { group: string; kind: SkillKind; items: Skill[]; }
 
 export interface Credential {
   title: string;
@@ -176,51 +177,86 @@ export const PROJECTS: Project[] = [
 
 export const SKILLS: SkillGroup[] = [
   {
-    group: 'Languages',
+    group: 'Languages & Frameworks',
+    kind: 'method',
     items: [
-      { name: 'CSharp', version: '6+ yrs' },
-      { name: 'DotNet', version: 'core+mvc' },
-      { name: 'SQL', version: 'expert' },
-      { name: 'TypeScript', version: 'stable' },
-      { name: 'JavaScript', version: 'stable' },
+      { name: 'CSharp', meta: '.NET · 6+ yrs', note: 'Primary language across every role — services, integrations, CLIs and desktop add-ins.' },
+      { name: 'DotNet', meta: 'core · mvc', note: '.NET Core services and .NET MVC web apps in production.' },
+      { name: 'SQL', meta: 'expert', note: 'Database engineering, query tuning and data modeling — a core strength.' },
+      { name: 'TypeScript', meta: 'stable', note: 'Typed front-ends (this site) and Node Lambda handlers.' },
+      { name: 'JavaScript', meta: 'stable', note: 'Browser and serverless runtimes.' },
+      { name: 'HtmlCss', meta: 'craft', note: 'Hand-built, responsive, accessible UI.' },
     ],
   },
   {
-    group: 'Cloud',
+    group: 'Cloud — AWS & Azure',
+    kind: 'class',
     items: [
-      { name: 'AWS.Lambda', version: 'serverless' },
-      { name: 'AWS.Redshift', version: 'analytics' },
-      { name: 'AWS.CDK', version: 'iac' },
-      { name: 'AWS.Cognito', version: 'authn' },
-      { name: 'Azure', version: 'active' },
+      { name: 'Aws.Lambda', meta: 'Node 20 · ARM64', note: 'Serverless compute; automated operational workflows.' },
+      { name: 'Aws.ApiGateway', meta: 'REST', note: 'Front door for the serverless SaaS.' },
+      { name: 'Aws.Redshift', meta: 'warehouse', note: 'Led migration of analytics from legacy SSAS to Redshift.' },
+      { name: 'Aws.DynamoDB', meta: 'on-demand', note: 'Multi-tenant NoSQL data store.' },
+      { name: 'Aws.S3.CloudFront', meta: 'OAC', note: 'Block-all-public buckets served via CloudFront with Origin Access Control.' },
+      { name: 'Aws.Cognito', meta: 'JWT', note: 'Token auth; shopId derived from the JWT, never the request body.' },
+      { name: 'Aws.SecretsManager', meta: 'secrets', note: 'Runtime secret management for Lambdas.' },
+      { name: 'Aws.CDK', meta: 'IaC', note: 'Entire stack defined as code.' },
+      { name: 'Aws.EC2', meta: 'compute', note: 'Operational workflows and hosting.' },
+      { name: 'Azure', meta: 'active', note: 'Cloud work across the Microsoft ecosystem.' },
     ],
   },
   {
-    group: 'Data',
+    group: 'Data & Analytics',
+    kind: 'field',
     items: [
-      { name: 'Redshift', version: 'warehouse' },
-      { name: 'DynamoDB', version: 'nosql' },
-      { name: 'SQLite', version: 'embedded' },
-      { name: 'SSAS.SSRS', version: 'bi' },
-      { name: 'ETL.Pipelines', version: 'prod' },
+      { name: 'DatabaseEngineering', meta: 'core', note: 'Schema design, tuning and data-access architecture.' },
+      { name: 'SSAS', meta: 'analysis', note: 'Legacy analytics layer, later modernized to Redshift.' },
+      { name: 'SSRS', meta: 'reporting', note: 'Customized, stakeholder-facing reports.' },
+      { name: 'EtlPipelines', meta: 'prod', note: 'Redesigned pipelines and added automated validation for the cutover.' },
+      { name: 'SQLite', meta: 'embedded', note: 'PTI Raw files transformed into queryable SQLite databases.' },
     ],
   },
   {
     group: 'Frontend',
+    kind: 'variable',
     items: [
-      { name: 'Angular', version: 'v19' },
-      { name: 'Vue', version: 'v3' },
-      { name: 'RxJS', version: 'reactive' },
-      { name: 'HTML.CSS', version: 'craft' },
+      { name: 'Angular', meta: 'v19', note: 'Bulk-upload UI at IKS Health; this portfolio.' },
+      { name: 'Vue', meta: 'v3', note: 'EE Marketplace front-end and the Excel Add-In UI.' },
+      { name: 'RxJS', meta: 'reactive', note: 'Reactive state and streams in Angular.' },
+      { name: 'ExcelAddIn', meta: 'Office JS', note: 'Desktop-style add-in over the .NET library.' },
+    ],
+  },
+  {
+    group: 'Integration & APIs',
+    kind: 'interface',
+    items: [
+      { name: 'IntegrationApis', meta: 'high-throughput', note: 'Designed and maintained high-throughput integration APIs in C#/.NET.' },
+      { name: 'RedoxApi', meta: 'EHR', note: 'Real-time EHR data exchange for a healthcare platform.' },
+      { name: 'BulkUpload', meta: 'CSV · Excel', note: 'Generic, reusable bulk-upload integration.' },
+      { name: 'NuGetPackaging', meta: 'library', note: 'Core logic packaged as a reusable NuGet service library, reused across surfaces.' },
+      { name: 'CliTooling', meta: 'cross-platform', note: 'Cross-platform CLI built on top of the NuGet core.' },
+    ],
+  },
+  {
+    group: 'Security',
+    kind: 'event',
+    items: [
+      { name: 'JwtAuth', meta: 'authn', note: 'Engineered JWT authentication modules from the ground up.' },
+      { name: 'SessionManagement', meta: 'fixes', note: 'Corrected critical session-management flaws.' },
+      { name: 'AccessControl', meta: 'authz', note: 'Hardened access control on clinical platforms.' },
+      { name: 'MultiTenantIsolation', meta: 'hardened', note: 'JWT-derived tenant scoping — never trust the client.' },
+      { name: 'SecurityHardening', meta: 'HIPAA-adjacent', note: 'Resolved critical vulnerabilities on a HIPAA-adjacent SaaS.' },
     ],
   },
   {
     group: 'Practices',
+    kind: 'snippet',
     items: [
-      { name: 'API.Integration', version: 'high-throughput' },
-      { name: 'CloudArchitecture', version: 'design' },
-      { name: 'SecurityHardening', version: 'jwt+authz' },
-      { name: 'StakeholderMgmt', version: 'delivery' },
+      { name: 'CloudArchitecture', meta: 'design', note: 'Architected serverless stacks end-to-end.' },
+      { name: 'Troubleshooting', meta: 'production', note: 'Hands-on technical troubleshooting under real load.' },
+      { name: 'StakeholderMgmt', meta: 'delivery', note: 'Delivered outcomes that map to stakeholder goals.' },
+      { name: 'EndToEndDelivery', meta: 'solo', note: 'Designed and shipped a full SaaS product solo.' },
+      { name: 'LlmIntegration', meta: 'provider-agnostic', note: 'Hot-swap Claude / Gemini / any OpenAI-compatible endpoint without redeploy.' },
+      { name: 'PromptEngineering', meta: 'certified', note: 'Certified; pairs with AI tooling to ship faster.' },
     ],
   },
 ];
