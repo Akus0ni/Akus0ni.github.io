@@ -1,6 +1,7 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ARCH_NODES, ARCH_EDGES, ArchNode } from '../data/resume';
+import { ResumeService } from '../core/resume.service';
+import { ArchNode } from '../data/resume';
 
 interface LaidNode extends ArchNode { cx: number; cy: number; }
 interface LaidEdge { id: string; d: string; dur: number; delay: number; }
@@ -102,12 +103,13 @@ const BOX_W = 150, BOX_H = 54;
   `],
 })
 export class ArchDiagramComponent {
+  private resume = inject(ResumeService);
   readonly W = W; readonly H = H;
   readonly boxW = BOX_W; readonly boxH = BOX_H;
   readonly animate = signal(!matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   readonly nodes = computed<LaidNode[]>(() =>
-    ARCH_NODES.map((n) => ({
+    this.resume.archNodes.map((n) => ({
       ...n,
       cx: PADX + (n.x / 100) * (W - 2 * PADX),
       cy: PADY + (n.y / 100) * (H - 2 * PADY),
@@ -116,7 +118,7 @@ export class ArchDiagramComponent {
 
   readonly edges = computed<LaidEdge[]>(() => {
     const map = new Map(this.nodes().map((n) => [n.id, n]));
-    return ARCH_EDGES.map((e, i) => {
+    return this.resume.archEdges.map((e, i) => {
       const a = map.get(e.from)!, b = map.get(e.to)!;
       const dx = (b.cx - a.cx) * 0.42;
       return {

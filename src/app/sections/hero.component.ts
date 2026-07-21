@@ -1,14 +1,18 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TypewriterComponent } from '../components/typewriter.component';
 import { ArchDiagramComponent } from '../components/arch-diagram.component';
+import { WindowDotsComponent } from '../components/window-dots.component';
 import { RevealDirective } from '../directives/reveal.directive';
-import { LINKS } from '../data/resume';
+import { ResumeService } from '../core/resume.service';
 
 @Component({
   selector: 'app-hero',
   standalone: true,
-  imports: [CommonModule, TypewriterComponent, ArchDiagramComponent, RevealDirective],
+  imports: [
+    CommonModule, TypewriterComponent, ArchDiagramComponent,
+    WindowDotsComponent, RevealDirective,
+  ],
   template: `
     <section id="home" class="hero">
       <div class="hero-grid">
@@ -16,14 +20,14 @@ import { LINKS } from '../data/resume';
         <div class="identity">
           <p class="eyebrow load load-1">~/akash-soni · <span class="branch">main</span></p>
 
-          <pre class="id-code load load-2" aria-hidden="true"><span class="tok-com">// available for backend, full-stack and/or cloud roles</span>
+          <pre class="id-code load load-2" aria-hidden="true"><span class="tok-com">// {{ profile.availabilityComment }}</span>
 <span class="tok-key">public sealed class</span> <span class="tok-type">Akash</span> : <span class="tok-type">SoftwareEngineer</span></pre>
 
-          <h1 class="name load load-3">Akash&nbsp;Soni</h1>
+          <h1 class="name load load-3">{{ profile.name }}</h1>
 
           <div class="role load load-4">
             <span class="chev">&gt;</span>
-            <app-typewriter [phrases]="phrases"></app-typewriter>
+            <app-typewriter [phrases]="profile.typewriter"></app-typewriter>
           </div>
 
           <p class="tagline load load-5">
@@ -48,7 +52,7 @@ import { LINKS } from '../data/resume';
         <!-- portrait, treated as an editor preview -->
         <figure class="portrait-frame load load-5">
           <div class="pf-bar">
-            <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+            <app-window-dots />
             <span class="pf-name mono">akash.jpg — preview</span>
           </div>
           <div class="portrait">
@@ -57,7 +61,7 @@ import { LINKS } from '../data/resume';
             <span class="scan"></span>
           </div>
           <figcaption class="pf-tags">
-            <span>Raipur, IN</span><span>· UTC+5:30</span><span>· <a class="pf-cta" href="#contact">let's build something <span class="ar" aria-hidden="true">→</span></a></span>
+            <span>{{ profile.locationShort }}</span><span>· {{ profile.timezone }}</span><span>· <a class="pf-cta" href="#contact">{{ profile.ctaCaption }} <span class="ar" aria-hidden="true">→</span></a></span>
           </figcaption>
         </figure>
       </div>
@@ -101,6 +105,7 @@ import { LINKS } from '../data/resume';
       font-size: clamp(3rem, 9vw, 5.6rem);
       font-weight: 700;
       letter-spacing: -.035em;
+      white-space: nowrap;
       background: linear-gradient(120deg, var(--text) 30%, var(--amber));
       -webkit-background-clip: text; background-clip: text; color: transparent;
       margin: .1rem 0 .3rem;
@@ -149,8 +154,6 @@ import { LINKS } from '../data/resume';
       padding: .55rem .8rem; border-bottom: 1px solid var(--border);
       background: var(--bg-3);
     }
-    .dot { width: 11px; height: 11px; border-radius: 50%; opacity: .9; }
-    .dot.r { background: #ff5f57; } .dot.y { background: #febc2e; } .dot.g { background: #28c840; }
     .pf-name { margin-left: .4rem; font-size: .72rem; color: var(--text-3); }
 
     .portrait { position: relative; aspect-ratio: 16 / 11; overflow: hidden; }
@@ -231,11 +234,7 @@ import { LINKS } from '../data/resume';
   `],
 })
 export class HeroComponent {
-  readonly links = LINKS;
-  readonly phrases = [
-    'Full-stack Software Engineer',
-    '.NET / C# · AWS & Azure',
-    'I connect systems.',
-    'Cloud data-platform builder',
-  ];
+  private resume = inject(ResumeService);
+  readonly links = this.resume.links;
+  readonly profile = this.resume.profile;
 }

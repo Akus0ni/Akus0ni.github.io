@@ -1,19 +1,17 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RevealDirective } from '../directives/reveal.directive';
-import { PROJECTS, Project } from '../data/resume';
+import { SectionHeaderComponent } from '../components/section-header.component';
+import { ResumeService } from '../core/resume.service';
+import { Project } from '../data/resume';
 
 @Component({
   selector: 'app-projects',
   standalone: true,
-  imports: [CommonModule, RevealDirective],
+  imports: [CommonModule, RevealDirective, SectionHeaderComponent],
   template: `
     <section id="projects" class="wrap">
-      <header class="s-head" appReveal>
-        <span class="s-index mono">03</span>
-        <h2 class="s-title">Selected work</h2>
-        <span class="s-file mono">~/projects</span>
-      </header>
+      <app-section-header id="projects" appReveal />
 
       <div class="grid">
         @for (p of projects; track p.id; let i = $index) {
@@ -42,15 +40,6 @@ import { PROJECTS, Project } from '../data/resume';
     </section>
   `,
   styles: [`
-    .wrap { padding: clamp(2.5rem, 6vw, 4rem) 0; }
-    .s-head {
-      display: flex; align-items: baseline; gap: .8rem; margin-bottom: 2.2rem;
-      border-bottom: 1px solid var(--border); padding-bottom: .9rem;
-    }
-    .s-index { color: var(--accent); font-size: .85rem; }
-    .s-title { font-size: clamp(1.5rem, 4vw, 2.1rem); }
-    .s-file { margin-left: auto; color: var(--text-3); font-size: .78rem; }
-
     .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.1rem; }
     .card.featured { grid-column: 1 / -1; }
 
@@ -113,7 +102,8 @@ import { PROJECTS, Project } from '../data/resume';
   `],
 })
 export class ProjectsComponent {
-  readonly projects: Project[] = PROJECTS;
+  private resume = inject(ResumeService);
+  readonly projects: Project[] = this.resume.projects;
 
   onMove(e: PointerEvent): void {
     const el = (e.currentTarget as HTMLElement);

@@ -1,19 +1,17 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RevealDirective } from '../directives/reveal.directive';
-import { ROLES, Role } from '../data/resume';
+import { SectionHeaderComponent } from '../components/section-header.component';
+import { ResumeService } from '../core/resume.service';
+import { Role } from '../data/resume';
 
 @Component({
   selector: 'app-experience',
   standalone: true,
-  imports: [CommonModule, RevealDirective],
+  imports: [CommonModule, RevealDirective, SectionHeaderComponent],
   template: `
     <section id="experience" class="wrap">
-      <header class="s-head" appReveal>
-        <span class="s-index mono">02</span>
-        <h2 class="s-title">Experience</h2>
-        <span class="s-file mono">git log --oneline</span>
-      </header>
+      <app-section-header id="experience" appReveal />
 
       <div class="log">
         @for (r of roles; track r.company; let i = $index) {
@@ -60,15 +58,6 @@ import { ROLES, Role } from '../data/resume';
     </section>
   `,
   styles: [`
-    .wrap { padding: clamp(2.5rem, 6vw, 4rem) 0; }
-    .s-head {
-      display: flex; align-items: baseline; gap: .8rem; margin-bottom: 2.2rem;
-      border-bottom: 1px solid var(--border); padding-bottom: .9rem;
-    }
-    .s-index { color: var(--accent); font-size: .85rem; }
-    .s-title { font-size: clamp(1.5rem, 4vw, 2.1rem); }
-    .s-file { margin-left: auto; color: var(--text-3); font-size: .78rem; }
-
     .log { position: relative; }
     .commit { display: grid; grid-template-columns: 30px 1fr; gap: .4rem; }
 
@@ -132,7 +121,8 @@ import { ROLES, Role } from '../data/resume';
   `],
 })
 export class ExperienceComponent {
-  readonly roles: Role[] = ROLES;
+  private resume = inject(ResumeService);
+  readonly roles: Role[] = this.resume.roles;
   private hashes = ['a1f9c2e', '7b3d05a', 'e4c81ff'];
   hash(i: number): string { return this.hashes[i] ?? '1a2b3c4'; }
 }

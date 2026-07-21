@@ -4,24 +4,15 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RevealDirective } from '../directives/reveal.directive';
-import { SKILLS, SkillKind } from '../data/resume';
+import { SectionHeaderComponent } from '../components/section-header.component';
+import { ResumeService } from '../core/resume.service';
+import { SkillKind } from '../data/resume';
 
 interface Row {
   name: string; meta: string; note: string;
   group: string; kind: SkillKind; glyph: string; kindLabel: string;
   hay: string; // lowercased search haystack
 }
-
-// short chip labels for the long group names
-const SHORT: Record<string, string> = {
-  'Languages & Frameworks': 'Languages',
-  'Cloud — AWS & Azure': 'Cloud',
-  'Data & Analytics': 'Data',
-  'Frontend': 'Frontend',
-  'Integration & APIs': 'Integration',
-  'Security': 'Security',
-  'Practices': 'Practices',
-};
 
 const KIND: Record<SkillKind, { glyph: string; label: string }> = {
   method:    { glyph: 'M', label: 'method' },
@@ -36,14 +27,10 @@ const KIND: Record<SkillKind, { glyph: string; label: string }> = {
 @Component({
   selector: 'app-skills',
   standalone: true,
-  imports: [CommonModule, FormsModule, RevealDirective],
+  imports: [CommonModule, FormsModule, RevealDirective, SectionHeaderComponent],
   template: `
     <section id="skills" class="wrap">
-      <header class="s-head" appReveal>
-        <span class="s-index mono">04</span>
-        <h2 class="s-title">Skills</h2>
-        <span class="s-file mono">skills.ts</span>
-      </header>
+      <app-section-header id="skills" appReveal />
 
       <div class="cmd" appReveal [revealDelay]="80">
         <!-- palette invocation hint -->
@@ -115,15 +102,6 @@ const KIND: Record<SkillKind, { glyph: string; label: string }> = {
     </section>
   `,
   styles: [`
-    .wrap { padding: clamp(2.5rem, 6vw, 4rem) 0; }
-    .s-head {
-      display: flex; align-items: baseline; gap: .8rem; margin-bottom: 2rem;
-      border-bottom: 1px solid var(--border); padding-bottom: .9rem;
-    }
-    .s-index { color: var(--accent); font-size: .85rem; }
-    .s-title { font-size: clamp(1.5rem, 4vw, 2.1rem); }
-    .s-file { margin-left: auto; color: var(--text-3); font-size: .78rem; }
-
     .cmd-caption {
       display: flex; align-items: center; gap: .4rem; margin-bottom: .7rem;
       font-size: .78rem; color: var(--text-3);
@@ -246,8 +224,9 @@ const KIND: Record<SkillKind, { glyph: string; label: string }> = {
 })
 export class SkillsComponent {
   private host = inject(ElementRef<HTMLElement>);
+  private resume = inject(ResumeService);
 
-  readonly rows: Row[] = SKILLS.flatMap((g) =>
+  readonly rows: Row[] = this.resume.skills.flatMap((g) =>
     g.items.map((it) => ({
       ...it,
       group: g.group,
@@ -259,10 +238,10 @@ export class SkillsComponent {
   );
 
   // one quick-filter chip per group, with a short label + count
-  readonly cats = SKILLS.map((g) => ({
+  readonly cats = this.resume.skills.map((g) => ({
     group: g.group,
     kind: g.kind,
-    short: SHORT[g.group] ?? g.group,
+    short: g.short,
     count: g.items.length,
   }));
 

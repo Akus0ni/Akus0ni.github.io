@@ -37,7 +37,8 @@ export type SkillKind =
   | 'method' | 'class' | 'field' | 'variable' | 'interface' | 'event' | 'snippet';
 
 export interface Skill { name: string; meta: string; note: string; }
-export interface SkillGroup { group: string; kind: SkillKind; items: Skill[]; }
+/** `short` is the compact label used by the skills chips and the SQL console. */
+export interface SkillGroup { group: string; short: string; kind: SkillKind; items: Skill[]; }
 
 export interface Credential {
   title: string;
@@ -52,6 +53,38 @@ export const LINKS: SocialLinks = {
   github: 'https://github.com/Akus0ni',
   resume: 'media/Akash_Soni_Resume.pdf',
   location: 'Raipur, Chhattisgarh, India',
+};
+
+export interface Profile {
+  name: string;
+  role: string;
+  locationShort: string;
+  timezone: string;
+  /** used in the contact terminal ("open to …") */
+  availability: string;
+  /** used in the hero code comment ("available for …") */
+  availabilityComment: string;
+  /** the small link caption under the hero photo */
+  ctaCaption: string;
+  /** rotating phrases for the hero typewriter */
+  typewriter: string[];
+}
+
+/** Single source of truth for identity/availability copy reused across sections. */
+export const PROFILE: Profile = {
+  name: 'Akash Soni',
+  role: 'Full-stack Software Engineer',
+  locationShort: 'Raipur, IN',
+  timezone: 'UTC+5:30',
+  availability: 'open to backend, full-stack and/or cloud engineering roles',
+  availabilityComment: 'available for backend, full-stack and/or cloud roles',
+  ctaCaption: "let's build something",
+  typewriter: [
+    'Full-stack Software Engineer',
+    '.NET / C# · AWS & Azure',
+    'I connect systems.',
+    'Cloud data-platform builder',
+  ],
 };
 
 export const SUMMARY =
@@ -178,6 +211,7 @@ export const PROJECTS: Project[] = [
 export const SKILLS: SkillGroup[] = [
   {
     group: 'Languages & Frameworks',
+    short: 'Languages',
     kind: 'method',
     items: [
       { name: 'CSharp', meta: '.NET · 6+ yrs', note: 'Primary language across every role — services, integrations, CLIs and desktop add-ins.' },
@@ -190,6 +224,7 @@ export const SKILLS: SkillGroup[] = [
   },
   {
     group: 'Cloud — AWS & Azure',
+    short: 'Cloud',
     kind: 'class',
     items: [
       { name: 'Aws.Lambda', meta: 'Node 20 · ARM64', note: 'Serverless compute; automated operational workflows.' },
@@ -206,6 +241,7 @@ export const SKILLS: SkillGroup[] = [
   },
   {
     group: 'Data & Analytics',
+    short: 'Data',
     kind: 'field',
     items: [
       { name: 'DatabaseEngineering', meta: 'core', note: 'Schema design, tuning and data-access architecture.' },
@@ -217,6 +253,7 @@ export const SKILLS: SkillGroup[] = [
   },
   {
     group: 'Frontend',
+    short: 'Frontend',
     kind: 'variable',
     items: [
       { name: 'Angular', meta: 'v19', note: 'Bulk-upload UI at IKS Health; this portfolio.' },
@@ -227,6 +264,7 @@ export const SKILLS: SkillGroup[] = [
   },
   {
     group: 'Integration & APIs',
+    short: 'Integration',
     kind: 'interface',
     items: [
       { name: 'IntegrationApis', meta: 'high-throughput', note: 'Designed and maintained high-throughput integration APIs in C#/.NET.' },
@@ -238,6 +276,7 @@ export const SKILLS: SkillGroup[] = [
   },
   {
     group: 'Security',
+    short: 'Security',
     kind: 'event',
     items: [
       { name: 'JwtAuth', meta: 'authn', note: 'Engineered JWT authentication modules from the ground up.' },
@@ -249,6 +288,7 @@ export const SKILLS: SkillGroup[] = [
   },
   {
     group: 'Practices',
+    short: 'Practices',
     kind: 'snippet',
     items: [
       { name: 'CloudArchitecture', meta: 'design', note: 'Architected serverless stacks end-to-end.' },

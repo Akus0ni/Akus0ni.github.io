@@ -1,19 +1,16 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RevealDirective } from '../directives/reveal.directive';
-import { STATS } from '../data/resume';
+import { SectionHeaderComponent } from '../components/section-header.component';
+import { ResumeService } from '../core/resume.service';
 
 @Component({
   selector: 'app-about',
   standalone: true,
-  imports: [CommonModule, RevealDirective],
+  imports: [CommonModule, RevealDirective, SectionHeaderComponent],
   template: `
-    <section id="about" class="wrap">
-      <header class="s-head" appReveal>
-        <span class="s-index mono">01</span>
-        <h2 class="s-title">Who am I</h2>
-        <span class="s-file mono">README.md</span>
-      </header>
+    <section id="about" class="wrap wrap-first">
+      <app-section-header id="about" appReveal />
 
       <div class="about-grid">
         <article class="readme" appReveal [revealDelay]="80">
@@ -49,14 +46,8 @@ import { STATS } from '../data/resume';
     </section>
   `,
   styles: [`
-    .wrap { padding: clamp(3rem, 8vw, 6rem) 0 clamp(1.5rem, 4vw, 2.5rem); }
-    .s-head {
-      display: flex; align-items: baseline; gap: .8rem; margin-bottom: 2rem;
-      border-bottom: 1px solid var(--border); padding-bottom: .9rem;
-    }
-    .s-index { color: var(--accent); font-size: .85rem; }
-    .s-title { font-size: clamp(1.5rem, 4vw, 2.1rem); }
-    .s-file { margin-left: auto; color: var(--text-3); font-size: .78rem; }
+    /* first section — extra top breathing room */
+    .wrap-first { padding: clamp(3rem, 8vw, 6rem) 0 clamp(1.5rem, 4vw, 2.5rem); }
 
     .about-grid { display: grid; grid-template-columns: 1.4fr .9fr; gap: clamp(1.5rem, 4vw, 3rem); }
 
@@ -82,5 +73,6 @@ import { STATS } from '../data/resume';
   `],
 })
 export class AboutComponent {
-  readonly stats = STATS;
+  private resume = inject(ResumeService);
+  readonly stats = this.resume.stats;
 }

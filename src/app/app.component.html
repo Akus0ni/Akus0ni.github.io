@@ -53,7 +53,7 @@
                    stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                 <path [attr.d]="n.icon"/>
               </svg>
-              <span class="ri-file mono">{{ n.file }}</span>
+              <span class="ri-file mono">{{ n.navFile }}</span>
             </a>
           </li>
         }
@@ -75,12 +75,13 @@
       <app-about></app-about>
       <app-experience></app-experience>
       <app-projects></app-projects>
+      <app-query-console></app-query-console>
       <app-skills></app-skills>
       <app-education></app-education>
       <app-contact></app-contact>
 
       <footer class="foot">
-        <span class="mono">© {{ year }} Akash Soni</span>
+        <span class="mono">© {{ year }} {{ profile.name }}</span>
         <span class="mono dim">Angular {{ ngVersion }} · TypeScript · hand-built, no template</span>
       </footer>
     </div>

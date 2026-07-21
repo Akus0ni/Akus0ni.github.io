@@ -1,19 +1,16 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RevealDirective } from '../directives/reveal.directive';
-import { EDUCATION, CERTS } from '../data/resume';
+import { SectionHeaderComponent } from '../components/section-header.component';
+import { ResumeService } from '../core/resume.service';
 
 @Component({
   selector: 'app-education',
   standalone: true,
-  imports: [CommonModule, RevealDirective],
+  imports: [CommonModule, RevealDirective, SectionHeaderComponent],
   template: `
     <section id="education" class="wrap">
-      <header class="s-head" appReveal>
-        <span class="s-index mono">05</span>
-        <h2 class="s-title">Foundations</h2>
-        <span class="s-file mono">education · certs</span>
-      </header>
+      <app-section-header id="education" appReveal />
 
       <div class="cols">
         <div class="col" appReveal>
@@ -56,15 +53,6 @@ import { EDUCATION, CERTS } from '../data/resume';
     </section>
   `,
   styles: [`
-    .wrap { padding: clamp(2.5rem, 6vw, 4rem) 0; }
-    .s-head {
-      display: flex; align-items: baseline; gap: .8rem; margin-bottom: 2rem;
-      border-bottom: 1px solid var(--border); padding-bottom: .9rem;
-    }
-    .s-index { color: var(--accent); font-size: .85rem; }
-    .s-title { font-size: clamp(1.5rem, 4vw, 2.1rem); }
-    .s-file { margin-left: auto; color: var(--text-3); font-size: .78rem; }
-
     .cols { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1.5rem, 4vw, 3rem); }
     .col-h { color: var(--text-3); font-size: .82rem; margin-bottom: 1rem; }
 
@@ -97,6 +85,7 @@ import { EDUCATION, CERTS } from '../data/resume';
   `],
 })
 export class EducationComponent {
-  readonly education = EDUCATION;
-  readonly certs = CERTS;
+  private resume = inject(ResumeService);
+  readonly education = this.resume.education;
+  readonly certs = this.resume.certs;
 }

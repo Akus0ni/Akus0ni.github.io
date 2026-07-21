@@ -6,15 +6,11 @@ import {
   selector: 'app-typewriter',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<span class="tw">{{ text() }}<span class="caret" aria-hidden="true"></span></span>`,
+  template: `<span class="tw">{{ text() }}<span class="blink-caret" aria-hidden="true"></span></span>`,
   styles: [`
     .tw { font-family: var(--font-mono); }
-    .caret {
-      display: inline-block; width: .62ch; height: 1.05em; margin-left: 2px;
-      transform: translateY(2px); background: var(--accent);
-      animation: blink 1s steps(1) infinite;
-    }
-    @media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
+    /* caret is the shared global .blink-caret; nudge it away from the text */
+    .blink-caret { margin-left: 2px; }
   `],
 })
 export class TypewriterComponent implements OnInit, OnDestroy {
