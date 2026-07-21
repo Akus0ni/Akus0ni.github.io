@@ -57,7 +57,7 @@ import { LINKS } from '../data/resume';
             <span class="scan"></span>
           </div>
           <figcaption class="pf-tags">
-            <span>Raipur, IN</span><span>· UTC+5:30</span><span class="accent">· open to remote</span>
+            <span>Raipur, IN</span><span>· UTC+5:30</span><span class="accent">· let's build something</span>
           </figcaption>
         </figure>
       </div>
