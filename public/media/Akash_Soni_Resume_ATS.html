@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Akash Soni — Full-stack Software Engineer — Resume</title>
+<style>
+  /* ============================================================
+     ATS-optimized resume — single column, standard fonts,
+     black-on-white body. Portfolio identity carried ONLY through
+     accent color (amber/teal) + a mono section label. No graphics,
+     no multi-column layout, no images — parses cleanly.
+     Palette echoes portfolio: amber #C9791B, teal #0E8F9C.
+     ============================================================ */
+  :root {
+    --ink:    #17202b;   /* near-black body text            */
+    --muted:  #454f5b;
+    --faint:  #6b7686;
+    --rule:   #d7dce3;
+    --amber:  #b06d16;   /* print-safe amber accent         */
+    --teal:   #0d7d8a;   /* print-safe teal (links)         */
+    --tag-bg: #f1f4f7;
+    --tag-ink:#33414f;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    font-size: 10.4px;
+    line-height: 1.42;
+    background: #eef1f4;
+  }
+  .page {
+    max-width: 820px;
+    margin: 24px auto;
+    background: #fff;
+    padding: 40px 46px 46px;
+    box-shadow: 0 2px 14px rgba(0,0,0,.10);
+  }
+
+  /* ---- header ---- */
+  header { border-bottom: 2px solid var(--amber); padding-bottom: 9px; }
+  h1 {
+    font-size: 25px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: .2px;
+    color: #10161f;
+  }
+  .subtitle {
+    font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--amber);
+    margin: 3px 0 8px;
+    letter-spacing: .2px;
+  }
+  .contact {
+    font-size: 9.8px;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 3px 7px;
+  }
+  .contact a { color: var(--teal); text-decoration: none; }
+  .contact .sep { color: var(--rule); }
+
+  /* ---- summary ---- */
+  .summary {
+    margin: 12px 0 2px;
+    color: #2b333d;
+    font-size: 10.2px;
+    text-align: justify;
+  }
+
+  /* ---- section frame ---- */
+  section { margin-top: 14px; }
+  h2 {
+    font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+    font-size: 11.5px;
+    font-weight: 700;
+    margin: 0 0 7px;
+    padding-bottom: 3px;
+    border-bottom: 1px solid var(--rule);
+    letter-spacing: .3px;
+    color: #10161f;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  h2 .slash { color: var(--amber); font-weight: 700; }
+  h2 .rule { flex: 1; border-bottom: 1px solid transparent; }
+
+  /* ---- experience / project entry ---- */
+  .entry { margin-bottom: 10px; page-break-inside: avoid; }
+  .entry-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+  }
+  .role { font-weight: 700; font-size: 10.8px; color: #17202b; }
+  .role .at { font-weight: 400; color: var(--muted); }
+  .where {
+    color: var(--faint);
+    font-size: 9.6px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  ul { margin: 3px 0 0; padding-left: 15px; }
+  li { margin: 1.5px 0; color: #2b333d; }
+  li::marker { color: var(--teal); }
+
+  .tags { margin-top: 4px; font-size: 9px; }
+  .tag {
+    display: inline-block;
+    background: var(--tag-bg);
+    border: 1px solid #e2e7ec;
+    border-radius: 3px;
+    padding: 1px 6px;
+    margin: 2px 3px 0 0;
+    font-size: 8.8px;
+    color: var(--tag-ink);
+  }
+
+  /* ---- skills ---- */
+  .skills { display: grid; gap: 3px; }
+  .skill-row {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .skill-cat {
+    font-weight: 700;
+    color: var(--amber);
+    font-size: 9.8px;
+  }
+  .skill-list { color: #2b333d; font-size: 9.8px; }
+
+  /* ---- education / certs ---- */
+  .edu-item, .cert-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 5px;
+  }
+  .edu-school { font-weight: 700; }
+  .edu-detail { color: var(--muted); }
+  .cert-title { font-weight: 600; }
+  .cert-title a { color: inherit; text-decoration: none; }
+  .year { color: var(--faint); font-size: 9.6px; white-space: nowrap; }
+
+  /* ---- print: compact to a single page ---- */
+  @media print {
+    @page { margin: 6mm 11mm; }
+    body { background: #fff; font-size: 9.7px; line-height: 1.24; }
+    .page { box-shadow: none; margin: 0; max-width: none; padding: 0; }
+    a { color: var(--teal); }
+
+    h1 { font-size: 21px; }
+    .subtitle { font-size: 10.4px; margin: 1px 0 4px; }
+    header { padding-bottom: 5px; }
+    .contact { font-size: 9.1px; gap: 2px 6px; }
+
+    .summary { font-size: 9.5px; margin: 6px 0 1px; }
+
+    section { margin-top: 7px; }
+    h2 { font-size: 11px; margin-bottom: 3px; padding-bottom: 2px; }
+
+    .entry { margin-bottom: 4px; }
+    .role { font-size: 10.1px; }
+    .where { font-size: 8.9px; }
+    ul { margin-top: 0.5px; }
+    li { margin: 0.5px 0; }
+
+    .skills { gap: 1px; }
+    .skill-row { grid-template-columns: 156px 1fr; }
+    .skill-cat, .skill-list { font-size: 9.3px; }
+
+    .tags { margin-top: 1.5px; }
+    .tag { padding: 0.5px 5px; margin-top: 1px; font-size: 8.4px; }
+
+    .edu-item, .cert-item { margin-bottom: 2.5px; }
+    .year { font-size: 8.9px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <h1>Akash Soni</h1>
+    <div class="subtitle">Full-stack Software Engineer</div>
+    <div class="contact">
+      <span>Raipur, Chhattisgarh, India</span>
+      <span class="sep">|</span>
+      <a href="mailto:asoni7667@gmail.com">asoni7667@gmail.com</a>
+      <span class="sep">|</span>
+      <span>+91 7581912130</span>
+      <span class="sep">|</span>
+      <a href="https://www.linkedin.com/in/akus0ni/">linkedin.com/in/akus0ni</a>
+      <span class="sep">|</span>
+      <a href="https://github.com/Akus0ni">github.com/Akus0ni</a>
+      <span class="sep">|</span>
+      <a href="https://akus0ni.github.io/">akus0ni.github.io</a>
+    </div>
+  </header>
+
+  <p class="summary">
+    Full-stack Software Engineer with 6+ years delivering technical solutions for enterprise clients — from
+    cloud data-platform migrations to API integrations used by healthcare and energy partners. Proven track
+    record in SQL database engineering, AWS and Azure cloud architecture, and building reusable tools adopted
+    across product lines. Hands-on experience in technical troubleshooting, stakeholder management, and
+    end-to-end technical implementation that directly improves customer outcomes.
+  </p>
+
+  <section>
+    <h2><span class="slash">//</span> Technical Skills</h2>
+    <div class="skills">
+      <div class="skill-row">
+        <div class="skill-cat">Languages &amp; Frameworks</div>
+        <div class="skill-list">C# / .NET, .NET Core, .NET Framework 4.8, ASP.NET MVC, SQL, TypeScript, JavaScript, HTML, CSS</div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-cat">Cloud (AWS &amp; Azure)</div>
+        <div class="skill-list">AWS Lambda, API Gateway, Redshift, DynamoDB, S3, CloudFront, Cognito, Secrets Manager, EC2, AWS CDK (IaC), Microsoft Azure</div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-cat">Data &amp; Analytics</div>
+        <div class="skill-list">Database Engineering, Query Tuning, Data Modeling, SSAS, SSRS, ETL Pipelines, SQLite, Apache NiFi</div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-cat">Frontend</div>
+        <div class="skill-list">Angular (v19), Vue.js (v3), RxJS, Excel Add-In (Office JS)</div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-cat">Integration &amp; APIs</div>
+        <div class="skill-list">RESTful APIs, High-throughput Integration APIs, Redox API (EHR), CSV/Excel Bulk Upload, NuGet Packaging, CLI Tooling</div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-cat">Security</div>
+        <div class="skill-list">JWT Authentication, Session Management, Access Control, Multi-tenant Isolation, Security Hardening (HIPAA-adjacent)</div>
+      </div>
+      <div class="skill-row">
+        <div class="skill-cat">Practices</div>
+        <div class="skill-list">SOLID Principles, System Design, Microservices, Test-Driven Development, Data Structures &amp; Algorithms, Cloud Architecture, CI/CD, LLM Integration, Prompt Engineering</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="slash">//</span> Professional Experience</h2>
+
+    <div class="entry">
+      <div class="entry-head">
+        <div class="role">Software Engineer <span class="at">— Energy Exemplar</span></div>
+        <div class="where">Pune, India · Jun 2025 – Mar 2026</div>
+      </div>
+      <ul>
+        <li>Designed and delivered the Import/Export integration subsystem for PLEXOS Cloud in C# / .NET, packaging core logic as a reusable NuGet service library with a clean interface contract.</li>
+        <li>Built a cross-platform CLI tool on top of the NuGet library, transforming PTI Raw files into queryable SQLite databases.</li>
+        <li>Developed a desktop-style Excel Add-In (Vue.js UI) integrating with the backend service library.</li>
+        <li>Contributed to the EE Marketplace front-end using Vue.js.</li>
+      </ul>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head">
+        <div class="role">Software Engineer <span class="at">— eGain Communications</span></div>
+        <div class="where">Pune, India · Sep 2021 – May 2025</div>
+      </div>
+      <ul>
+        <li>Designed and maintained high-throughput integration APIs in C# / .NET serving enterprise partners.</li>
+        <li>Led service-oriented modernization of the analytics layer, migrating from SSAS to AWS Redshift with Apache NiFi data flows.</li>
+        <li>Automated operational workflows using .NET Core, AWS Lambda, EC2, and Secrets Manager.</li>
+        <li>Produced and customized SSRS reports delivering stakeholder-facing insights.</li>
+      </ul>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head">
+        <div class="role">Software Developer <span class="at">— IKS Health</span></div>
+        <div class="where">Mumbai, India · Feb 2020 – Sep 2021</div>
+      </div>
+      <ul>
+        <li>Hardened access control for the Scribble WFM platform by engineering a JWT-based authentication module.</li>
+        <li>Integrated the platform with the Redox API for real-time EHR data exchange.</li>
+        <li>Developed a generic CSV/Excel bulk-upload integration using Angular with ASP.NET MVC.</li>
+        <li>Designed a performance leaderboard to drive continuous improvement metrics.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="slash">//</span> Projects</h2>
+
+    <div class="entry">
+      <div class="entry-head">
+        <div class="role">AI-Powered Review Intelligence</div>
+        <div class="where">Serverless SaaS · 2026</div>
+      </div>
+      <ul>
+        <li>Designed and shipped an end-to-end full-stack serverless SaaS solo; customers scan a QR code, tap a star, and receive 5 AI-generated review suggestions in under 30 seconds.</li>
+        <li>Architected the serverless AWS stack with AWS CDK: API Gateway, Lambda (Node.js 20, ARM64), DynamoDB (on-demand), S3 + CloudFront (OAC), Cognito (JWT), and Secrets Manager.</li>
+        <li>Built a provider-agnostic LLM client to hot-swap Claude / Gemini / any OpenAI-compatible endpoint without redeploy; hardened multi-tenant isolation with block-all-public S3 and JWT-derived tenant scoping.</li>
+      </ul>
+      <div class="tags">
+        <span class="tag">AWS CDK</span><span class="tag">Lambda</span><span class="tag">DynamoDB</span><span class="tag">Cognito</span><span class="tag">CloudFront</span><span class="tag">LLM</span>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head">
+        <div class="role">Import / Export Service Library &amp; CLI</div>
+        <div class="where">Reusable .NET library</div>
+      </div>
+      <ul>
+        <li>Designed a reusable NuGet service library and cross-platform CLI packaging core integration logic, with a clean interface contract so multiple product surfaces (CLI, Excel Add-In, cloud) reuse one core.</li>
+      </ul>
+      <div class="tags">
+        <span class="tag">C# / .NET</span><span class="tag">NuGet</span><span class="tag">SQLite</span><span class="tag">CLI</span>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head">
+        <div class="role">Analytics Platform Modernization (SSAS → AWS Redshift)</div>
+      </div>
+      <ul>
+        <li>Migrated enterprise analytics from a legacy SSAS stack to AWS Redshift — redesigned ETL pipelines, refactored the data-access layer, and introduced automated validation to de-risk the cutover.</li>
+      </ul>
+      <div class="tags">
+        <span class="tag">AWS Redshift</span><span class="tag">Apache NiFi</span><span class="tag">ETL</span><span class="tag">C# / .NET</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="slash">//</span> Education</h2>
+    <div class="edu-item">
+      <div>
+        <span class="edu-school">CDAC ACTS, Pune</span>
+        <div class="edu-detail">Post Graduate Diploma in Advanced Computing — 80.5%</div>
+      </div>
+      <div class="year">2020</div>
+    </div>
+    <div class="edu-item">
+      <div>
+        <span class="edu-school">NIT Raipur</span>
+        <div class="edu-detail">B.Tech in Information Technology — CGPA 7.55 / 10</div>
+      </div>
+      <div class="year">2017</div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="slash">//</span> Certifications</h2>
+    <div class="cert-item">
+      <div class="cert-title"><a href="https://coursera.org/share/9f9dadcd3bd598680ca162b99c59422a">Introduction to Cloud Computing — Coursera</a></div>
+      <div class="year">Jan 2024</div>
+    </div>
+    <div class="cert-item">
+      <div class="cert-title"><a href="https://www.linkedin.com/learning/certificates/9cd04a21d015da0d47760d274d6550121ff2176f000d811516337fe0329a62fe">Prompt Engineering — How to Talk to the AI — LinkedIn Learning</a></div>
+      <div class="year">Aug 2025</div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>
