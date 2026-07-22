@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
   PROFILE, LINKS, SUMMARY, STATS, ROLES, PROJECTS, SKILLS,
-  EDUCATION, CERTS, ARCH_NODES, ARCH_EDGES,
+  EDUCATION, CERTS, ARCH_FLOWS,
 } from '../data/resume';
 
 /**
@@ -20,6 +20,5 @@ export class ResumeService {
   readonly skills = SKILLS;
   readonly education = EDUCATION;
   readonly certs = CERTS;
-  readonly archNodes = ARCH_NODES;
-  readonly archEdges = ARCH_EDGES;
+  readonly archFlows = ARCH_FLOWS;
 }

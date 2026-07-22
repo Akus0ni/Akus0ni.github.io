@@ -24,7 +24,7 @@ Everything you'd want to change lives in **one file**:
 | Name, summary, jobs, projects, skills, education, links | `src/app/data/resume.ts` |
 | Photos & résumé PDF | `public/media/` (`akash-portrait.jpg`, `akash-sunset.jpg`, `Akash_Soni_Resume.pdf`) |
 | Colors / fonts / theme tokens | `src/styles.scss` (CSS custom properties at the top) |
-| Architecture diagram nodes | `ARCH_NODES` / `ARCH_EDGES` in `src/app/data/resume.ts` |
+| Architecture diagram flows | `ARCH_FLOWS` (nodes, edges, narration steps) in `src/app/data/resume.ts` |
 
 Links are already set:
 - LinkedIn → `https://www.linkedin.com/in/akus0ni/`

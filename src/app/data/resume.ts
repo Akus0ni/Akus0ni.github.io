@@ -338,25 +338,98 @@ export const CERTS: Credential[] = [
   },
 ];
 
-/** Architecture diagram nodes for the signature hero pipeline (AI SaaS stack). */
-export interface ArchNode { id: string; label: string; sub: string; x: number; y: number; kind: string; }
-export interface ArchEdge { from: string; to: string; }
+/**
+ * Signature-build architecture, modelled as two selectable request flows through
+ * the real serverless AWS stack shipped for the AI review SaaS (KanReview):
+ *   1. `review`    — the public customer path (QR scan → AI reviews), no auth.
+ *   2. `dashboard` — the Plus-tier owner path, gated by a Cognito JWT authorizer.
+ * The diagram component renders one flow at a time and steps a caption through
+ * `steps`, lighting the referenced nodes so the "how it works" reads on its own.
+ */
+export type ArchKind =
+  | 'edge' | 'cdn' | 'api' | 'auth' | 'compute' | 'data' | 'ai' | 'secret' | 'storage';
 
-export const ARCH_NODES: ArchNode[] = [
-  { id: 'client', label: 'Client', sub: 'QR · scan', x: 6, y: 50, kind: 'edge' },
-  { id: 'cdn', label: 'CloudFront', sub: 'S3 + OAC', x: 27, y: 22, kind: 'cdn' },
-  { id: 'api', label: 'API Gateway', sub: 'REST', x: 27, y: 78, kind: 'api' },
-  { id: 'auth', label: 'Cognito', sub: 'JWT', x: 50, y: 50, kind: 'auth' },
-  { id: 'lambda', label: 'Lambda', sub: 'Node 20 · ARM64', x: 72, y: 30, kind: 'compute' },
-  { id: 'db', label: 'DynamoDB', sub: 'on-demand', x: 93, y: 20, kind: 'data' },
-  { id: 'llm', label: 'LLM Client', sub: 'provider-agnostic', x: 93, y: 72, kind: 'ai' },
-];
+/** `x`/`y` are percentages of the diagram canvas (0–100). */
+export interface ArchNode { id: string; label: string; sub: string; x: number; y: number; kind: ArchKind; }
+/** `bidir` draws a read/write (two-way) relationship. */
+export interface ArchEdge { from: string; to: string; bidir?: boolean; }
+/** One narration beat: `at` node ids light up while `text` is shown. */
+export interface ArchStep { at: string[]; text: string; }
+export interface ArchFlow {
+  id: string;
+  name: string;      // tab label
+  tagline: string;   // one-line summary under the tabs
+  nodes: ArchNode[];
+  edges: ArchEdge[];
+  steps: ArchStep[];
+}
 
-export const ARCH_EDGES: ArchEdge[] = [
-  { from: 'client', to: 'cdn' },
-  { from: 'client', to: 'api' },
-  { from: 'api', to: 'auth' },
-  { from: 'auth', to: 'lambda' },
-  { from: 'lambda', to: 'db' },
-  { from: 'lambda', to: 'llm' },
+export const ARCH_FLOWS: ArchFlow[] = [
+  {
+    id: 'review',
+    name: 'Review flow',
+    tagline: 'Public · no sign-up — QR scan to five AI review drafts in under 30s',
+    nodes: [
+      { id: 'client', label: 'Customer',        sub: 'scan QR · mobile',   x: 4,  y: 50, kind: 'edge' },
+      { id: 'cdn',    label: 'CloudFront',       sub: 'S3 · Next.js',       x: 22, y: 50, kind: 'cdn' },
+      { id: 'api',    label: 'API Gateway',      sub: 'HTTP v2 · public',   x: 40, y: 50, kind: 'api' },
+      { id: 'lGet',   label: 'GetShopDetails',   sub: 'λ · Node 20',        x: 62, y: 15, kind: 'compute' },
+      { id: 'lGen',   label: 'GenerateFeedback', sub: 'λ · Node 20',        x: 62, y: 50, kind: 'compute' },
+      { id: 'lScan',  label: 'RecordScan',       sub: 'λ · Node 20',        x: 62, y: 85, kind: 'compute' },
+      { id: 'shops',  label: 'DynamoDB',         sub: 'Shops',              x: 90, y: 15, kind: 'data' },
+      { id: 'secret', label: 'Secrets Mgr',      sub: 'provider + key',     x: 90, y: 38, kind: 'secret' },
+      { id: 'llm',    label: 'LLM Provider',     sub: 'Claude · swappable', x: 90, y: 62, kind: 'ai' },
+      { id: 'scans',  label: 'DynamoDB',         sub: 'ScanAnalytics',      x: 90, y: 85, kind: 'data' },
+    ],
+    edges: [
+      { from: 'client', to: 'cdn' },
+      { from: 'cdn',    to: 'api' },
+      { from: 'api',    to: 'lGet' },
+      { from: 'api',    to: 'lGen' },
+      { from: 'api',    to: 'lScan' },
+      { from: 'lGet',   to: 'shops' },
+      { from: 'lGen',   to: 'secret' },
+      { from: 'lGen',   to: 'llm' },
+      { from: 'lScan',  to: 'scans' },
+    ],
+    steps: [
+      { at: ['client'],           text: 'Customer scans the QR at the counter' },
+      { at: ['cdn'],              text: 'CloudFront serves the static Next.js app from a locked-down S3 bucket' },
+      { at: ['api'],              text: 'The app calls the public HTTP API — no login required' },
+      { at: ['lGet', 'shops'],    text: 'GetShopDetails reads the shop config from the Shops table' },
+      { at: ['lGen', 'secret'],   text: 'GenerateFeedback first reads the provider + key from Secrets Manager' },
+      { at: ['lGen', 'llm'],      text: 'then calls that LLM provider directly — Claude, Gemini, any endpoint — for 5 drafts' },
+      { at: ['lScan', 'scans'],   text: 'RecordScan writes the star rating to the analytics table' },
+    ],
+  },
+  {
+    id: 'dashboard',
+    name: 'Owner dashboard',
+    tagline: 'Plus-tier · Cognito JWT — shopId is derived from the token, never the request body',
+    nodes: [
+      { id: 'owner',   label: 'Shop Owner',   sub: 'Plus · desktop',    x: 4,  y: 50, kind: 'edge' },
+      { id: 'cognito', label: 'Cognito',      sub: 'JWT sign-in',       x: 24, y: 50, kind: 'auth' },
+      { id: 'api',     label: 'API Gateway',  sub: 'JWT authorizer',    x: 44, y: 50, kind: 'api' },
+      { id: 'plus',    label: 'PlusOwnerFns', sub: 'λ · /owner/*',      x: 66, y: 50, kind: 'compute' },
+      { id: 'shops',   label: 'DynamoDB',     sub: 'Shops · r/w',       x: 91, y: 18, kind: 'data' },
+      { id: 'scans',   label: 'DynamoDB',     sub: 'Analytics · read',  x: 91, y: 50, kind: 'data' },
+      { id: 'qr',      label: 'S3',           sub: 'QR code PNGs',      x: 91, y: 82, kind: 'storage' },
+    ],
+    edges: [
+      { from: 'owner',   to: 'cognito' },
+      { from: 'cognito', to: 'api' },
+      { from: 'api',     to: 'plus' },
+      { from: 'plus',    to: 'shops', bidir: true },
+      { from: 'plus',    to: 'scans' },
+      { from: 'plus',    to: 'qr', bidir: true },
+    ],
+    steps: [
+      { at: ['owner'],                   text: 'Plus owner signs in from the dashboard' },
+      { at: ['cognito'],                 text: 'Cognito checks the credentials and issues a JWT' },
+      { at: ['api'],                     text: 'API Gateway verifies the JWT on every /owner/* request' },
+      { at: ['plus'],                    text: 'shopId is resolved from the token via a GSI — never trusted from the body' },
+      { at: ['plus', 'shops', 'scans'],  text: 'The Lambda reads/writes the shop record and reads its scan analytics' },
+      { at: ['plus', 'qr'],              text: 'QR codes are written to a private S3 bucket, then served back as presigned URLs' },
+    ],
+  },
 ];
