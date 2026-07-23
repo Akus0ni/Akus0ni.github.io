@@ -1,0 +1,263 @@
+<section class="module" id="module-10" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">10</span>
+      <h1 class="module-title">Pipes</h1>
+      <p class="module-subtitle">A declarative way to reshape a value <em>for display only</em> — right inside the template, without touching the underlying data or writing a method. Plus the pure/impure distinction that decides whether a pipe is cheap or costly.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A filter over the lens, not the subject</h2>
+        <p>A pipe is like a <strong>photo filter</strong>: the original image on your camera roll is untouched, but what you <em>see</em> is warmer, cropped, brightened. <span class="term" data-definition="A pipe is a class that transforms a value for display in a template using the | syntax. It never mutates the source data — it returns a new, formatted view of it.">A pipe</span> transforms how a value appears in the template while the data behind it stays exactly as it was.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">template syntax</span>
+            <pre><code><span class="code-line"><span class="code-comment">&lt;!-- value | pipeName : argument --&gt;</span></span>
+<span class="code-line">{{ startDate | <span class="code-function">date</span> : <span class="code-string">'MMM yyyy'</span> }}</span>
+<span class="code-line">{{ name | <span class="code-function">uppercase</span> }}</span>
+<span class="code-line">{{ stream$ | <span class="code-function">async</span> }}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">How to read it</span>
+            <div class="translation-lines">
+              <p class="tl">The <code>|</code> sends the value on its left <em>through</em> the pipe named on its right.</p>
+              <p class="tl">Anything after a <code>:</code> is an argument — here, the date format string.</p>
+              <p class="tl">These three (<code>date</code>, <code>uppercase</code>, <code>async</code>) are built in. This app pulls them in through <code>CommonModule</code>, even though its templates don't currently use them.</p>
+              <p class="tl">The stored <code>startDate</code> never changes — only its rendered text does.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">This codebase formats without a pipe — on purpose</h2>
+        <p>The résumé needs to show "3.7 years" for a role. It does that with a plain function, not a pipe. Seeing the alternative sharpens what a pipe actually buys you.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">utils/duration.ts</span>
+            <pre><code><span class="code-line"><span class="code-comment">/** Whole-year decimal between two 'YYYY-MM' dates. */</span></span>
+<span class="code-line"><span class="code-keyword">export function</span> <span class="code-function">yearsBetween</span>(from: <span class="code-keyword">string</span>, to: <span class="code-keyword">string</span>): <span class="code-keyword">string</span> {</span>
+<span class="code-line">  <span class="code-keyword">const</span> [fy, fm] = from.<span class="code-function">split</span>(<span class="code-string">'-'</span>).<span class="code-function">map</span>(Number);</span>
+<span class="code-line">  <span class="code-keyword">const</span> [ty, tm] = to.<span class="code-function">split</span>(<span class="code-string">'-'</span>).<span class="code-function">map</span>(Number);</span>
+<span class="code-line">  <span class="code-keyword">return</span> (((ty * <span class="code-number">12</span> + tm) - (fy * <span class="code-number">12</span> + fm)) / <span class="code-number">12</span>).<span class="code-function">toFixed</span>(<span class="code-number">1</span>);</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does — and doesn't</span>
+            <div class="translation-lines">
+              <p class="tl">A component calls <code>yearsBetween(a, b)</code> and stores the string. The template just prints it.</p>
+              <p class="tl">This is fine here because the value is computed <em>once</em> from static data that never changes at runtime.</p>
+              <p class="tl">A pipe earns its keep when the same formatting is reused across many templates, or must re-run as data changes — neither is true for this one-off calculation.</p>
+              <p class="tl">Knowing when <em>not</em> to reach for a pipe is as useful as knowing how to write one.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Turning that function into a pipe</h2>
+        <p>If this formatting were needed in ten templates, you would promote it to a pipe: a class with the <code>@Pipe</code> decorator and a single <code>transform</code> method.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">years.pipe.ts (illustrative)</span>
+            <pre><code><span class="code-line"><span class="code-keyword">@Pipe</span>({ <span class="code-property">name</span>: <span class="code-string">'years'</span>, <span class="code-property">standalone</span>: <span class="code-keyword">true</span> })</span>
+<span class="code-line"><span class="code-keyword">export class</span> <span class="code-function">YearsPipe</span> <span class="code-keyword">implements</span> PipeTransform {</span>
+<span class="code-line">  <span class="code-function">transform</span>(from: <span class="code-keyword">string</span>, to: <span class="code-keyword">string</span>): <span class="code-keyword">string</span> {</span>
+<span class="code-line">    <span class="code-keyword">return</span> <span class="code-function">yearsBetween</span>(from, to);</span>
+<span class="code-line">  }</span>
+<span class="code-line">}</span>
+<span class="code-line"><span class="code-comment">// in a template: {{ role.start | years : role.end }}</span></span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What each piece is</span>
+            <div class="translation-lines">
+              <p class="tl"><code>@Pipe({ name: 'years' })</code> registers the template name — the word after <code>|</code>.</p>
+              <p class="tl"><span class="term" data-definition="PipeTransform is the interface every pipe implements. It requires exactly one method, transform(), which Angular calls to produce the displayed value.">PipeTransform</span> forces the class to provide one method: <code>transform</code>.</p>
+              <p class="tl">The value before <code>|</code> becomes the first argument; each <code>: arg</code> becomes the next. So <code>role.start</code> is <code>from</code>, <code>role.end</code> is <code>to</code>.</p>
+              <p class="tl"><code>standalone: true</code> means a component just adds <code>YearsPipe</code> to its <code>imports</code> — no NgModule, same rule as components.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Pure vs impure — the setting that decides cost</h2>
+        <p>This is the one pipe concept with real performance stakes. By default pipes are <strong>pure</strong>: Angular only re-runs <code>transform</code> when the input <em>reference</em> changes. An <strong>impure</strong> pipe re-runs on every single change-detection pass.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">🧊</div>
+            <h4 class="pattern-title">Pure (default)</h4>
+            <p class="pattern-desc">Recomputes only when the input value or object reference changes. Cheap — <span class="term" data-definition="Memoization: caching the result of a computation so that repeating it with the same input returns the stored answer instead of recalculating.">memoized</span> by design. Use this almost always.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">🔥</div>
+            <h4 class="pattern-title">Impure (opt-in)</h4>
+            <p class="pattern-desc"><code>{ pure: false }</code>. Runs on <em>every</em> change-detection tick — fine for <code>async</code>, dangerous for heavy work. Reach for it rarely.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-content">
+            <strong class="callout-title">The classic pure-pipe surprise</strong>
+            <p>Because a pure pipe only re-runs when the <em>reference</em> changes, mutating an array in place (<code>arr.push(x)</code>) will <strong>not</strong> update a pipe that filters it — the reference is the same. The fix is to replace the array (<code>arr = [...arr, x]</code>), which is exactly the immutable style signals encourage. Recognising this saves hours of "why isn't my list updating?"</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Spot the pipe bug</h2>
+        <p>One of these lines makes a pure pipe silently stop updating. Click the culprit.</p>
+
+        <div class="bug-challenge">
+          <h3>A pipe filters <code>skills</code>. Why won't the view refresh when a skill is added?</h3>
+          <div class="bug-code">
+            <div class="bug-line" data-line="1" onclick="checkBugLine(this, false)">
+              <span class="line-num">1</span>
+              <code>@Pipe({ name: 'byTag' })  // pure by default</code>
+            </div>
+            <div class="bug-line" data-line="2" onclick="checkBugLine(this, false)">
+              <span class="line-num">2</span>
+              <code>transform(skills: Skill[], tag: string) {</code>
+            </div>
+            <div class="bug-line" data-line="3" onclick="checkBugLine(this, false)">
+              <span class="line-num">3</span>
+              <code>  return skills.filter(s => s.tag === tag);</code>
+            </div>
+            <div class="bug-line" data-line="4" onclick="checkBugLine(this, false)">
+              <span class="line-num">4</span>
+              <code>}</code>
+            </div>
+            <div class="bug-line bug-target" data-line="5" onclick="checkBugLine(this, true)">
+              <span class="line-num">5</span>
+              <code>// caller: this.skills.push(newSkill);</code>
+            </div>
+          </div>
+          <div class="bug-feedback" id="bug-feedback"></div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">The takeaway</strong>
+            <p>The pipe is correct. The <em>caller</em> mutates the array in place, so its reference never changes and the pure pipe never re-runs. Replace the array instead of pushing into it — the same immutable habit that keeps signals and <code>OnPush</code> happy.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The <code>async</code> pipe: the one you'll use most</h2>
+        <p>The built-in <code>async</code> pipe is the standout impure pipe. It subscribes to an Observable or Promise, hands the latest value to the template, and — crucially — unsubscribes for you when the component is destroyed.</p>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">🔌</div>
+            <div>
+              <strong>Subscribes automatically</strong>
+              <p><code>{{ data$ | async }}</code> — no manual <code>.subscribe()</code> in your component code.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">🧹</div>
+            <div>
+              <strong>Unsubscribes on destroy</strong>
+              <p>It cleans up when the view goes away — sidestepping the memory-leak teardown lesson from Module 07.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-3)">📡</div>
+            <div>
+              <strong>Signals reduce the need</strong>
+              <p>In a signal-first app like this one, reading a signal in the template covers most of what <code>async</code> did — so you'll see it less here than in RxJS-heavy apps.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Do you reach for a pipe?</h2>
+        <p>The judgement calls that separate a clean template from a slow one.</p>
+
+        <div class="quiz-container" id="quiz-module10">
+          <div class="quiz-question-block"
+               data-correct="opt-pipe"
+               data-explanation-right="Right. Reused, display-only formatting across many templates is the textbook case for a pure pipe — declarative, memoized, and it keeps the source data untouched."
+               data-explanation-wrong="Think about reuse and where the logic belongs. Formatting the same way in many templates, purely for display, is exactly what a pure pipe is for — cleaner than repeating a method everywhere.">
+            <h3 class="quiz-question">The same "3.7 years" formatting is suddenly needed in eight different templates. Best move?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="opt-copy" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Copy the method into all eight components</span>
+              </button>
+              <button class="quiz-option" data-value="opt-pipe" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Promote it to a pure, standalone pipe</span>
+              </button>
+              <button class="quiz-option" data-value="opt-impure" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Make it an impure pipe to be safe</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="opt-ref"
+               data-explanation-right="Exactly. A pure pipe re-runs only when the input reference changes. push() mutates in place, so the reference is identical and the pipe stays put. Replace the array to fix it."
+               data-explanation-wrong="Recall how pure pipes decide to re-run: only when the input reference changes. Mutating the array in place keeps the same reference, so the pipe never fires. That's the root cause here.">
+            <h3 class="quiz-question">A list filtered by a pure pipe won't update after new items arrive. Most likely cause?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="opt-ref" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The array is mutated in place, so its reference never changes</span>
+              </button>
+              <button class="quiz-option" data-value="opt-name" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The pipe's <code>name</code> is misspelled</span>
+              </button>
+              <button class="quiz-option" data-value="opt-import" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The pipe wasn't added to <code>imports</code></span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="opt-async"
+               data-explanation-right="Correct. The async pipe subscribes and — the part that saves you — unsubscribes automatically when the view is destroyed, avoiding the manual-teardown leak from Module 07."
+               data-explanation-wrong="Think about lifecycle safety. The async pipe's real value is that it unsubscribes for you on destroy, so you don't leak subscriptions the way a hand-rolled .subscribe() can.">
+            <h3 class="quiz-question">Beyond convenience, what does the <code>async</code> pipe protect you from?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="opt-async" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Leaking a subscription by forgetting to unsubscribe</span>
+              </button>
+              <button class="quiz-option" data-value="opt-type" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Type errors in the template</span>
+              </button>
+              <button class="quiz-option" data-value="opt-style" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Styles leaking to other components</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module10')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module10')">Try Again</button>
+        </div>
+
+        <p>You now have the language surface Angular gives you — decorators, signal I/O, and pipes. Time to watch every system in the course fire at once, in one real feature.</p>
+      </section>
+
+    </div>
+  </div>
+</section>

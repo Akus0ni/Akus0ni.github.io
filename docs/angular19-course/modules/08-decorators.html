@@ -1,0 +1,378 @@
+<section class="module" id="module-8" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">08</span>
+      <h1 class="module-title">Decorators, in depth</h1>
+      <p class="module-subtitle">The <code>@</code> you have seen on every class so far is just a function that staples metadata onto that class. Here is the full taxonomy — and what the compiler does with it before your code ever runs.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A decorator is a function, not magic</h2>
+        <p>Think of a class as a suitcase and a decorator as the <strong>luggage tag</strong> the check-in desk staples to the handle. The suitcase is unchanged — same contents, same zips — but the tag carries routing information the baggage system reads later. <span class="term" data-definition="A decorator is a function prefixed with @ that runs at definition time and receives the thing it decorates (a class, field, method, or parameter) so it can record metadata about it.">A decorator</span> works the same way: it attaches configuration to a class without altering the class body.</p>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">🧳</div>
+            <div>
+              <strong>The class</strong>
+              <p>Plain TypeScript — fields, a constructor, methods. It has no idea it is a component.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">🏷️</div>
+            <div>
+              <strong>The decorator</strong>
+              <p><code>@Component({…})</code> records "this class is a rendering unit, here is its template" as metadata.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-3)">🛄</div>
+            <div>
+              <strong>The compiler</strong>
+              <p>Reads the tag and routes the class into the framework — no runtime guesswork.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The tag, on a real class</h2>
+        <p>The reveal directive in this codebase is nothing but a class with a tag. Strip the <code>@Directive</code> line and you have inert TypeScript; add it back and Angular knows how to wire it.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">reveal.directive.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">@Directive</span>({</span>
+<span class="code-line">  <span class="code-property">selector</span>: <span class="code-string">'[appReveal]'</span>,</span>
+<span class="code-line">  <span class="code-property">standalone</span>: <span class="code-keyword">true</span>,</span>
+<span class="code-line">})</span>
+<span class="code-line"><span class="code-keyword">export class</span> <span class="code-function">RevealDirective</span> <span class="code-keyword">implements</span> OnInit, OnDestroy {</span>
+<span class="code-line">  <span class="code-comment">// …plain class members below</span></span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What the decorator records</span>
+            <div class="translation-lines">
+              <p class="tl"><code>@Directive(config)</code> is a function call. It runs when the file is defined and stamps the config object onto the class.</p>
+              <p class="tl">The <code>selector</code> tells the compiler: wherever an element has the <code>appReveal</code> attribute, attach an instance of this class to it.</p>
+              <p class="tl">The class itself never references Angular. All the "this is a directive" knowledge lives in the tag, not the body.</p>
+              <p class="tl">Remove the decorator and the class still compiles as TypeScript — it just stops being anything Angular can see.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The tag is read at build time, then thrown away</h2>
+        <p>This is the part most tutorials skip. With <span class="term" data-definition="Ahead-of-Time compilation: Angular compiles your components and templates during the build, before the browser loads them, rather than in the browser at runtime. It is the default in Angular 19.">Ahead-of-Time compilation</span> — the v19 default — the Angular compiler reads your decorators <em>during the build</em> and rewrites each class to carry a static definition field. At runtime, the framework reads that field, not the decorator.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-dec-1","label":"You write @Component / @Directive / @Injectable on a class in your source file."},
+          {"highlight":"flow-dec-2","label":"At build time, the Angular compiler (ngtsc) parses the decorator statically — it reads the config as data, without running it.","packet":true,"from":"dec-1","to":"dec-2"},
+          {"highlight":"flow-dec-3","label":"It generates a static definition field on the class — cmp for components, dir for directives, inj for services — plus a factory.","packet":true,"from":"dec-2","to":"dec-3"},
+          {"highlight":"flow-dec-4","label":"In the browser, Ivy reads that static field to instantiate and render. The decorator itself is never evaluated at runtime.","packet":true,"from":"dec-3","to":"dec-4"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-dec-1">
+              <div class="flow-actor-icon">✍️</div>
+              <span>@Decorator in source</span>
+            </div>
+            <div class="flow-actor" id="flow-dec-2">
+              <div class="flow-actor-icon">🛠️</div>
+              <span>Compiler (ngtsc)</span>
+            </div>
+            <div class="flow-actor" id="flow-dec-3">
+              <div class="flow-actor-icon">🧬</div>
+              <span>Static ɵcmp field</span>
+            </div>
+            <div class="flow-actor" id="flow-dec-4">
+              <div class="flow-actor-icon">⚡</div>
+              <span>Ivy runtime</span>
+            </div>
+          </div>
+          <div class="flow-packet" id="flow-packet"></div>
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to follow a decorator from source to screen</div>
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">🧠</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why this matters when you steer a build</strong>
+            <p>Because decorators are compiled away, most decorator mistakes are caught at <em>build time</em>, not as a mysterious runtime crash. And because Angular's own decorators are read statically, this app does not ship the <span class="term" data-definition="reflect-metadata: a runtime library that lets code inspect type information at runtime. Older Angular DI needed it via emitDecoratorMetadata; the modern AOT compiler and inject() do not.">reflect-metadata</span> polyfill — smaller bundle, one less thing to configure.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Three places a decorator can sit</h2>
+        <p>Every Angular decorator lives in exactly one of three positions on a class. Knowing which is which tells you instantly what a symbol does.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-actor-1)">🏛️</div>
+            <h4 class="pattern-title">Class decorators</h4>
+            <p class="pattern-desc">Sit above the <code>class</code> keyword and declare <em>what kind of thing</em> it is: <code>@Component</code>, <code>@Directive</code>, <code>@Injectable</code>, <code>@Pipe</code>, <code>@NgModule</code>.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🔌</div>
+            <h4 class="pattern-title">Member decorators</h4>
+            <p class="pattern-desc">Sit on a field or method to expose it: <code>@Input</code>, <code>@Output</code>, <code>@HostBinding</code>, <code>@HostListener</code>, <code>@ViewChild</code>, <code>@ContentChild</code>.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">🎚️</div>
+            <h4 class="pattern-title">Parameter decorators</h4>
+            <p class="pattern-desc">Sit on a constructor parameter to modify a DI request: <code>@Inject</code>, <code>@Optional</code>, <code>@Self</code>, <code>@SkipSelf</code>, <code>@Host</code>.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🗺️</div>
+          <div class="callout-content">
+            <strong class="callout-title">A quick read-the-position heuristic</strong>
+            <p>Above the class → it defines a building block. On a property → it connects that property to the outside world. On a constructor argument → it fine-tunes where an injected dependency comes from. That is the entire map.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The four class decorators, side by side</h2>
+        <p>Each class decorator generates a different static definition and slots the class into a different part of the framework.</p>
+
+        <div class="badge-list">
+          <div class="badge-item">
+            <code class="badge-code">@Component</code>
+            <span class="badge-desc">A directive <em>with a template</em>. Generates <code>ɵcmp</code>; renders a view. Seen on every file in <code>sections/</code> and <code>components/</code>.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">@Directive</code>
+            <span class="badge-desc">Behaviour attached to an existing element, no template. Generates <code>ɵdir</code>. This app's <code>RevealDirective</code>.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">@Injectable</code>
+            <span class="badge-desc">A class that can be provided and injected. Generates <code>ɵinj</code>/<code>ɵfac</code>. All four <code>core/</code> services carry it.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">@Pipe</code>
+            <span class="badge-desc">A reusable value transform usable in templates. Generates <code>ɵpipe</code>. Covered in Module 10.</span>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🔎</div>
+          <div class="callout-content">
+            <strong class="callout-title">@Component is @Directive plus a view</strong>
+            <p>Internally a component <em>is</em> a directive that also owns a template — which is exactly why Module 07 could call a directive "a component without a view." Same machinery, one extra capability.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Member decorators: <code>@Input</code> up close</h2>
+        <p>This codebase uses one member decorator heavily — <code>@Input</code> — to let a parent pass data into a child. Here it is on the typewriter component, verbatim.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">typewriter.component.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">export class</span> <span class="code-function">TypewriterComponent</span> {</span>
+<span class="code-line">  <span class="code-keyword">@Input</span>({ <span class="code-property">required</span>: <span class="code-keyword">true</span> }) phrases: <span class="code-keyword">string</span>[] = [];</span>
+<span class="code-line">  <span class="code-comment">// …animation state below</span></span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What the decorator wires</span>
+            <div class="translation-lines">
+              <p class="tl"><code>@Input</code> marks <code>phrases</code> as a <em>public entry point</em>: a parent template can write <code>[phrases]="myList"</code> and the value lands here.</p>
+              <p class="tl">The <code>{ required: true }</code> option makes the compiler <strong>error</strong> if a parent forgets to pass it — a build-time guarantee, not a runtime surprise.</p>
+              <p class="tl">Other options exist: <code>alias</code> renames the binding, and <code>transform</code> runs a function on the value as it arrives.</p>
+              <p class="tl">Without the decorator, <code>phrases</code> would be an ordinary private-ish field the parent could never reach.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🧩</div>
+          <div class="callout-content">
+            <strong class="callout-title">The rest of the member family</strong>
+            <p>Angular ships more member decorators this app happens not to need: <code>@Output</code> emits events to the parent, <code>@HostListener</code> reacts to DOM events on the host element, <code>@HostBinding</code> writes to a host attribute, and <code>@ViewChild</code>/<code>@ContentChild</code> grab references to elements. Module 09 shows their modern, signal-based replacements.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Parameter decorators: bending a DI lookup</h2>
+        <p>Module 05 traced how <code>inject()</code> walks <em>up</em> the injector tree until it finds a provider. Parameter decorators (and their <code>inject()</code> option equivalents) let you change that walk when you need to.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">🤷</div>
+            <h4 class="pattern-title">@Optional</h4>
+            <p class="pattern-desc">"If nobody provides this, give me <code>null</code> instead of throwing." Turns a hard dependency into a nice-to-have.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🚫</div>
+            <h4 class="pattern-title">@Self</h4>
+            <p class="pattern-desc">"Only look in <em>this</em> element's own injector. Do not walk up." Fails fast if the provider isn't local.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">⏭️</div>
+            <h4 class="pattern-title">@SkipSelf</h4>
+            <p class="pattern-desc">"Skip my own injector; start the search at my parent." Useful for recursive components that must reach an ancestor.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">🧱</div>
+            <h4 class="pattern-title">@Host</h4>
+            <p class="pattern-desc">"Walk up, but stop at my host component's boundary." Keeps a lookup from escaping into the wider app.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">🎯</div>
+          <div class="callout-content">
+            <strong class="callout-title">These are the knobs on the resolution walk</strong>
+            <p>Everything Module 05 taught about "first match wins, walking upward" still holds — these decorators just change <em>where the walk starts</em> and <em>what happens on a miss</em>. In the <code>inject()</code> function form you pass the same intent as options: <code>inject(Token, { optional: true, self: true })</code>.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Watch a decorator get compiled</h2>
+        <p>Here is the build conversation, dramatised: your class, the tag it wears, and the compiler that turns the tag into something the runtime can use.</p>
+
+        <div class="chat-window" id="chat-decorators">
+          <div class="chat-messages">
+            <div class="chat-message" data-msg="0" data-sender="class" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">C</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">RevealDirective (class)</span>
+                <p>I'm just a plain class. I have an <code>ngOnInit</code> and an <code>IntersectionObserver</code>. I don't know what Angular is.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="1" data-sender="decorator" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">@</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">@Directive tag</span>
+                <p>That's fine — I carry that part. My config says <code>selector: '[appReveal]'</code>. Anyone reading me knows where to attach you.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="2" data-sender="compiler" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-3)">🛠️</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-3)">ngtsc (compiler)</span>
+                <p>Reading you both at build time. I'll bake a static <code>ɵdir</code> field onto the class from that config — no need to run the tag later.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="3" data-sender="runtime" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-4)">⚡</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-4)">Ivy runtime</span>
+                <p>In the browser I only read <code>ɵdir</code>. I never see the <code>@</code> at all — it was a build-time note, and its job is done.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-typing" id="chat-decorators-typing" style="display:none">
+            <div class="chat-avatar" id="chat-decorators-typing-avatar">?</div>
+            <div class="chat-typing-dots">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+
+          <div class="chat-controls">
+            <button class="btn chat-next-btn">Next Message</button>
+            <button class="btn chat-all-btn">Play All</button>
+            <button class="btn chat-reset-btn">Replay</button>
+            <span class="chat-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your read on decorators</h2>
+        <p>Not definitions — judgement calls a developer actually makes.</p>
+
+        <div class="quiz-container" id="quiz-module8">
+          <div class="quiz-question-block"
+               data-correct="opt-build"
+               data-explanation-right="Right. With AOT (the v19 default), ngtsc reads the decorator at build time and generates a static definition field. A malformed decorator surfaces as a compile error, long before a user loads the page."
+               data-explanation-wrong="Think about when Angular actually reads your decorators. With Ahead-of-Time compilation, that happens during the build — which is why the error shows up there, not in the browser.">
+            <h3 class="quiz-question">You add <code>@Component</code> but misspell a config key. When does the problem most likely surface?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="opt-click" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Only when a user clicks the component</span>
+              </button>
+              <button class="quiz-option" data-value="opt-build" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>At build time, as a compile error</span>
+              </button>
+              <button class="quiz-option" data-value="opt-never" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Never — decorators are optional hints</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="opt-param"
+               data-explanation-right="Exactly. @Optional sits on a constructor parameter and modifies a DI request — it is a parameter decorator. Turning a missing provider into null instead of a thrown error is its whole job."
+               data-explanation-wrong="Look at where it sits and what it changes. @Optional goes on a constructor argument and alters how that dependency is resolved — that makes it a parameter decorator, not a class or member one.">
+            <h3 class="quiz-question">A service should keep working even if an optional logger isn't provided anywhere. Which decorator category solves this?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="opt-class" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A class decorator like <code>@Injectable</code></span>
+              </button>
+              <button class="quiz-option" data-value="opt-member" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A member decorator like <code>@Input</code></span>
+              </button>
+              <button class="quiz-option" data-value="opt-param" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A parameter decorator — <code>@Optional</code></span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="opt-static"
+               data-explanation-right="Correct. AOT reads decorators statically at build time and emits static definition fields, so Angular's own decorators need no runtime reflection — which is why this app doesn't ship reflect-metadata."
+               data-explanation-wrong="Consider what AOT compilation does with decorators. It reads them during the build and generates static fields, so there is nothing to reflect on at runtime for Angular's core decorators.">
+            <h3 class="quiz-question">Why does this app not need the <code>reflect-metadata</code> polyfill?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="opt-small" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because the app is small</span>
+              </button>
+              <button class="quiz-option" data-value="opt-static" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>AOT reads decorators at build time into static fields, so no runtime reflection is needed</span>
+              </button>
+              <button class="quiz-option" data-value="opt-noinject" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because it never uses dependency injection</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module8')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module8')">Try Again</button>
+        </div>
+
+        <p>Decorators are how Angular has described components since v2. But v19 is quietly moving component <em>inputs and outputs</em> off decorators entirely — onto functions that return signals. That shift is next.</p>
+      </section>
+
+    </div>
+  </div>
+</section>

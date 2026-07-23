@@ -87,7 +87,10 @@
         <button class="nav-dot" data-target="module-5" data-tooltip="05 · Dependency injection" role="tab" aria-label="Module 5: Dependency injection"></button>
         <button class="nav-dot" data-target="module-6" data-tooltip="06 · Change detection &amp; zones" role="tab" aria-label="Module 6: Change detection and zones"></button>
         <button class="nav-dot" data-target="module-7" data-tooltip="07 · Directives &amp; the DOM" role="tab" aria-label="Module 7: Directives and the DOM"></button>
-        <button class="nav-dot" data-target="module-8" data-tooltip="08 · Applied — the SQL console" role="tab" aria-label="Module 8: Applied case study, the SQL console"></button>
+        <button class="nav-dot" data-target="module-8" data-tooltip="08 · Decorators, in depth" role="tab" aria-label="Module 8: Decorators in depth"></button>
+        <button class="nav-dot" data-target="module-9" data-tooltip="09 · Signal inputs, outputs &amp; queries" role="tab" aria-label="Module 9: Signal inputs, outputs and queries"></button>
+        <button class="nav-dot" data-target="module-10" data-tooltip="10 · Pipes" role="tab" aria-label="Module 10: Pipes"></button>
+        <button class="nav-dot" data-target="module-11" data-tooltip="11 · Applied — the SQL console" role="tab" aria-label="Module 11: Applied case study, the SQL console"></button>
       </div>
     </div>
   </nav>
@@ -1635,6 +1638,8 @@
             <p>Open any Angular app and you now know exactly where to look: <code>main.ts</code> for the boot, the root component&apos;s <code>imports</code> for the tree, <code>@Injectable</code> services for shared state and logic, <code>signal</code>/<code>computed</code>/<code>effect</code> for reactivity, and <code>ngOnDestroy</code> for whether it leaks. The framework is four systems wearing many decorators — and you have seen all four run.</p>
           </div>
         </div>
+
+        <p>"Wearing many decorators" is the thread the next three modules pull on: what those <code>@</code> symbols actually are, the signal-based APIs replacing them in v19, and the pipes that reshape values on the way to the screen.</p>
       </section>
 
     </div>
@@ -1644,6 +1649,942 @@
   <div class="module-content">
     <header class="module-header animate-in">
       <span class="module-number">08</span>
+      <h1 class="module-title">Decorators, in depth</h1>
+      <p class="module-subtitle">The <code>@</code> you have seen on every class so far is just a function that staples metadata onto that class. Here is the full taxonomy — and what the compiler does with it before your code ever runs.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A decorator is a function, not magic</h2>
+        <p>Think of a class as a suitcase and a decorator as the <strong>luggage tag</strong> the check-in desk staples to the handle. The suitcase is unchanged — same contents, same zips — but the tag carries routing information the baggage system reads later. <span class="term" data-definition="A decorator is a function prefixed with @ that runs at definition time and receives the thing it decorates (a class, field, method, or parameter) so it can record metadata about it.">A decorator</span> works the same way: it attaches configuration to a class without altering the class body.</p>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">🧳</div>
+            <div>
+              <strong>The class</strong>
+              <p>Plain TypeScript — fields, a constructor, methods. It has no idea it is a component.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">🏷️</div>
+            <div>
+              <strong>The decorator</strong>
+              <p><code>@Component({…})</code> records "this class is a rendering unit, here is its template" as metadata.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-3)">🛄</div>
+            <div>
+              <strong>The compiler</strong>
+              <p>Reads the tag and routes the class into the framework — no runtime guesswork.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The tag, on a real class</h2>
+        <p>The reveal directive in this codebase is nothing but a class with a tag. Strip the <code>@Directive</code> line and you have inert TypeScript; add it back and Angular knows how to wire it.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">reveal.directive.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">@Directive</span>({</span>
+<span class="code-line">  <span class="code-property">selector</span>: <span class="code-string">'[appReveal]'</span>,</span>
+<span class="code-line">  <span class="code-property">standalone</span>: <span class="code-keyword">true</span>,</span>
+<span class="code-line">})</span>
+<span class="code-line"><span class="code-keyword">export class</span> <span class="code-function">RevealDirective</span> <span class="code-keyword">implements</span> OnInit, OnDestroy {</span>
+<span class="code-line">  <span class="code-comment">// …plain class members below</span></span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What the decorator records</span>
+            <div class="translation-lines">
+              <p class="tl"><code>@Directive(config)</code> is a function call. It runs when the file is defined and stamps the config object onto the class.</p>
+              <p class="tl">The <code>selector</code> tells the compiler: wherever an element has the <code>appReveal</code> attribute, attach an instance of this class to it.</p>
+              <p class="tl">The class itself never references Angular. All the "this is a directive" knowledge lives in the tag, not the body.</p>
+              <p class="tl">Remove the decorator and the class still compiles as TypeScript — it just stops being anything Angular can see.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The tag is read at build time, then thrown away</h2>
+        <p>This is the part most tutorials skip. With <span class="term" data-definition="Ahead-of-Time compilation: Angular compiles your components and templates during the build, before the browser loads them, rather than in the browser at runtime. It is the default in Angular 19.">Ahead-of-Time compilation</span> — the v19 default — the Angular compiler reads your decorators <em>during the build</em> and rewrites each class to carry a static definition field. At runtime, the framework reads that field, not the decorator.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-dec-1","label":"You write @Component / @Directive / @Injectable on a class in your source file."},
+          {"highlight":"flow-dec-2","label":"At build time, the Angular compiler (ngtsc) parses the decorator statically — it reads the config as data, without running it.","packet":true,"from":"dec-1","to":"dec-2"},
+          {"highlight":"flow-dec-3","label":"It generates a static definition field on the class — cmp for components, dir for directives, inj for services — plus a factory.","packet":true,"from":"dec-2","to":"dec-3"},
+          {"highlight":"flow-dec-4","label":"In the browser, Ivy reads that static field to instantiate and render. The decorator itself is never evaluated at runtime.","packet":true,"from":"dec-3","to":"dec-4"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-dec-1">
+              <div class="flow-actor-icon">✍️</div>
+              <span>@Decorator in source</span>
+            </div>
+            <div class="flow-actor" id="flow-dec-2">
+              <div class="flow-actor-icon">🛠️</div>
+              <span>Compiler (ngtsc)</span>
+            </div>
+            <div class="flow-actor" id="flow-dec-3">
+              <div class="flow-actor-icon">🧬</div>
+              <span>Static ɵcmp field</span>
+            </div>
+            <div class="flow-actor" id="flow-dec-4">
+              <div class="flow-actor-icon">⚡</div>
+              <span>Ivy runtime</span>
+            </div>
+          </div>
+          <div class="flow-packet" id="flow-packet"></div>
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to follow a decorator from source to screen</div>
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">🧠</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why this matters when you steer a build</strong>
+            <p>Because decorators are compiled away, most decorator mistakes are caught at <em>build time</em>, not as a mysterious runtime crash. And because Angular's own decorators are read statically, this app does not ship the <span class="term" data-definition="reflect-metadata: a runtime library that lets code inspect type information at runtime. Older Angular DI needed it via emitDecoratorMetadata; the modern AOT compiler and inject() do not.">reflect-metadata</span> polyfill — smaller bundle, one less thing to configure.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Three places a decorator can sit</h2>
+        <p>Every Angular decorator lives in exactly one of three positions on a class. Knowing which is which tells you instantly what a symbol does.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-actor-1)">🏛️</div>
+            <h4 class="pattern-title">Class decorators</h4>
+            <p class="pattern-desc">Sit above the <code>class</code> keyword and declare <em>what kind of thing</em> it is: <code>@Component</code>, <code>@Directive</code>, <code>@Injectable</code>, <code>@Pipe</code>, <code>@NgModule</code>.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🔌</div>
+            <h4 class="pattern-title">Member decorators</h4>
+            <p class="pattern-desc">Sit on a field or method to expose it: <code>@Input</code>, <code>@Output</code>, <code>@HostBinding</code>, <code>@HostListener</code>, <code>@ViewChild</code>, <code>@ContentChild</code>.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">🎚️</div>
+            <h4 class="pattern-title">Parameter decorators</h4>
+            <p class="pattern-desc">Sit on a constructor parameter to modify a DI request: <code>@Inject</code>, <code>@Optional</code>, <code>@Self</code>, <code>@SkipSelf</code>, <code>@Host</code>.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🗺️</div>
+          <div class="callout-content">
+            <strong class="callout-title">A quick read-the-position heuristic</strong>
+            <p>Above the class → it defines a building block. On a property → it connects that property to the outside world. On a constructor argument → it fine-tunes where an injected dependency comes from. That is the entire map.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The four class decorators, side by side</h2>
+        <p>Each class decorator generates a different static definition and slots the class into a different part of the framework.</p>
+
+        <div class="badge-list">
+          <div class="badge-item">
+            <code class="badge-code">@Component</code>
+            <span class="badge-desc">A directive <em>with a template</em>. Generates <code>ɵcmp</code>; renders a view. Seen on every file in <code>sections/</code> and <code>components/</code>.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">@Directive</code>
+            <span class="badge-desc">Behaviour attached to an existing element, no template. Generates <code>ɵdir</code>. This app's <code>RevealDirective</code>.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">@Injectable</code>
+            <span class="badge-desc">A class that can be provided and injected. Generates <code>ɵinj</code>/<code>ɵfac</code>. All four <code>core/</code> services carry it.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">@Pipe</code>
+            <span class="badge-desc">A reusable value transform usable in templates. Generates <code>ɵpipe</code>. Covered in Module 10.</span>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🔎</div>
+          <div class="callout-content">
+            <strong class="callout-title">@Component is @Directive plus a view</strong>
+            <p>Internally a component <em>is</em> a directive that also owns a template — which is exactly why Module 07 could call a directive "a component without a view." Same machinery, one extra capability.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Member decorators: <code>@Input</code> up close</h2>
+        <p>This codebase uses one member decorator heavily — <code>@Input</code> — to let a parent pass data into a child. Here it is on the typewriter component, verbatim.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">typewriter.component.ts</span>
+            <pre><code><span class="code-line"><span class="code-keyword">export class</span> <span class="code-function">TypewriterComponent</span> {</span>
+<span class="code-line">  <span class="code-keyword">@Input</span>({ <span class="code-property">required</span>: <span class="code-keyword">true</span> }) phrases: <span class="code-keyword">string</span>[] = [];</span>
+<span class="code-line">  <span class="code-comment">// …animation state below</span></span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What the decorator wires</span>
+            <div class="translation-lines">
+              <p class="tl"><code>@Input</code> marks <code>phrases</code> as a <em>public entry point</em>: a parent template can write <code>[phrases]="myList"</code> and the value lands here.</p>
+              <p class="tl">The <code>{ required: true }</code> option makes the compiler <strong>error</strong> if a parent forgets to pass it — a build-time guarantee, not a runtime surprise.</p>
+              <p class="tl">Other options exist: <code>alias</code> renames the binding, and <code>transform</code> runs a function on the value as it arrives.</p>
+              <p class="tl">Without the decorator, <code>phrases</code> would be an ordinary private-ish field the parent could never reach.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🧩</div>
+          <div class="callout-content">
+            <strong class="callout-title">The rest of the member family</strong>
+            <p>Angular ships more member decorators this app happens not to need: <code>@Output</code> emits events to the parent, <code>@HostListener</code> reacts to DOM events on the host element, <code>@HostBinding</code> writes to a host attribute, and <code>@ViewChild</code>/<code>@ContentChild</code> grab references to elements. Module 09 shows their modern, signal-based replacements.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Parameter decorators: bending a DI lookup</h2>
+        <p>Module 05 traced how <code>inject()</code> walks <em>up</em> the injector tree until it finds a provider. Parameter decorators (and their <code>inject()</code> option equivalents) let you change that walk when you need to.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">🤷</div>
+            <h4 class="pattern-title">@Optional</h4>
+            <p class="pattern-desc">"If nobody provides this, give me <code>null</code> instead of throwing." Turns a hard dependency into a nice-to-have.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🚫</div>
+            <h4 class="pattern-title">@Self</h4>
+            <p class="pattern-desc">"Only look in <em>this</em> element's own injector. Do not walk up." Fails fast if the provider isn't local.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">⏭️</div>
+            <h4 class="pattern-title">@SkipSelf</h4>
+            <p class="pattern-desc">"Skip my own injector; start the search at my parent." Useful for recursive components that must reach an ancestor.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">🧱</div>
+            <h4 class="pattern-title">@Host</h4>
+            <p class="pattern-desc">"Walk up, but stop at my host component's boundary." Keeps a lookup from escaping into the wider app.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">🎯</div>
+          <div class="callout-content">
+            <strong class="callout-title">These are the knobs on the resolution walk</strong>
+            <p>Everything Module 05 taught about "first match wins, walking upward" still holds — these decorators just change <em>where the walk starts</em> and <em>what happens on a miss</em>. In the <code>inject()</code> function form you pass the same intent as options: <code>inject(Token, { optional: true, self: true })</code>.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Watch a decorator get compiled</h2>
+        <p>Here is the build conversation, dramatised: your class, the tag it wears, and the compiler that turns the tag into something the runtime can use.</p>
+
+        <div class="chat-window" id="chat-decorators">
+          <div class="chat-messages">
+            <div class="chat-message" data-msg="0" data-sender="class" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">C</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-1)">RevealDirective (class)</span>
+                <p>I'm just a plain class. I have an <code>ngOnInit</code> and an <code>IntersectionObserver</code>. I don't know what Angular is.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="1" data-sender="decorator" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">@</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-2)">@Directive tag</span>
+                <p>That's fine — I carry that part. My config says <code>selector: '[appReveal]'</code>. Anyone reading me knows where to attach you.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="2" data-sender="compiler" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-3)">🛠️</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-3)">ngtsc (compiler)</span>
+                <p>Reading you both at build time. I'll bake a static <code>ɵdir</code> field onto the class from that config — no need to run the tag later.</p>
+              </div>
+            </div>
+            <div class="chat-message" data-msg="3" data-sender="runtime" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-4)">⚡</div>
+              <div class="chat-bubble">
+                <span class="chat-sender" style="color: var(--color-actor-4)">Ivy runtime</span>
+                <p>In the browser I only read <code>ɵdir</code>. I never see the <code>@</code> at all — it was a build-time note, and its job is done.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-typing" id="chat-decorators-typing" style="display:none">
+            <div class="chat-avatar" id="chat-decorators-typing-avatar">?</div>
+            <div class="chat-typing-dots">
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+              <span class="typing-dot"></span>
+            </div>
+          </div>
+
+          <div class="chat-controls">
+            <button class="btn chat-next-btn">Next Message</button>
+            <button class="btn chat-all-btn">Play All</button>
+            <button class="btn chat-reset-btn">Replay</button>
+            <span class="chat-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Check your read on decorators</h2>
+        <p>Not definitions — judgement calls a developer actually makes.</p>
+
+        <div class="quiz-container" id="quiz-module8">
+          <div class="quiz-question-block"
+               data-correct="opt-build"
+               data-explanation-right="Right. With AOT (the v19 default), ngtsc reads the decorator at build time and generates a static definition field. A malformed decorator surfaces as a compile error, long before a user loads the page."
+               data-explanation-wrong="Think about when Angular actually reads your decorators. With Ahead-of-Time compilation, that happens during the build — which is why the error shows up there, not in the browser.">
+            <h3 class="quiz-question">You add <code>@Component</code> but misspell a config key. When does the problem most likely surface?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="opt-click" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Only when a user clicks the component</span>
+              </button>
+              <button class="quiz-option" data-value="opt-build" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>At build time, as a compile error</span>
+              </button>
+              <button class="quiz-option" data-value="opt-never" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Never — decorators are optional hints</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="opt-param"
+               data-explanation-right="Exactly. @Optional sits on a constructor parameter and modifies a DI request — it is a parameter decorator. Turning a missing provider into null instead of a thrown error is its whole job."
+               data-explanation-wrong="Look at where it sits and what it changes. @Optional goes on a constructor argument and alters how that dependency is resolved — that makes it a parameter decorator, not a class or member one.">
+            <h3 class="quiz-question">A service should keep working even if an optional logger isn't provided anywhere. Which decorator category solves this?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="opt-class" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A class decorator like <code>@Injectable</code></span>
+              </button>
+              <button class="quiz-option" data-value="opt-member" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A member decorator like <code>@Input</code></span>
+              </button>
+              <button class="quiz-option" data-value="opt-param" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>A parameter decorator — <code>@Optional</code></span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="opt-static"
+               data-explanation-right="Correct. AOT reads decorators statically at build time and emits static definition fields, so Angular's own decorators need no runtime reflection — which is why this app doesn't ship reflect-metadata."
+               data-explanation-wrong="Consider what AOT compilation does with decorators. It reads them during the build and generates static fields, so there is nothing to reflect on at runtime for Angular's core decorators.">
+            <h3 class="quiz-question">Why does this app not need the <code>reflect-metadata</code> polyfill?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="opt-small" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because the app is small</span>
+              </button>
+              <button class="quiz-option" data-value="opt-static" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>AOT reads decorators at build time into static fields, so no runtime reflection is needed</span>
+              </button>
+              <button class="quiz-option" data-value="opt-noinject" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Because it never uses dependency injection</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module8')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module8')">Try Again</button>
+        </div>
+
+        <p>Decorators are how Angular has described components since v2. But v19 is quietly moving component <em>inputs and outputs</em> off decorators entirely — onto functions that return signals. That shift is next.</p>
+      </section>
+
+    </div>
+  </div>
+</section>
+<section class="module" id="module-9" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">09</span>
+      <h1 class="module-title">Signal inputs, outputs &amp; queries</h1>
+      <p class="module-subtitle">Angular 19's function-based replacements for <code>@Input</code>, <code>@Output</code> and <code>@ViewChild</code>. Same jobs — but the values are now signals, so they plug straight into the reactive graph from Module 04.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">From mailbox to live feed</h2>
+        <p>A <code>@Input</code> is like a <strong>mailbox</strong>: a value arrives, and if you want to react you have to be told the mail came (via <code>ngOnChanges</code> or a setter) and go check. A signal <span class="term" data-definition="input() is a function you call as a field initializer. It returns an InputSignal — a read-only signal whose value Angular updates whenever the parent binding changes.">input()</span> is a <strong>live feed</strong>: the value <em>is</em> a signal, so anything that reads it re-runs automatically when it changes. No notification step.</p>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-4)">📬</div>
+            <div>
+              <strong><code>@Input</code> — the decorator way</strong>
+              <p>A plain field. To react to changes you add <code>ngOnChanges</code> or a setter. It does not talk to signals on its own.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-5)">📡</div>
+            <div>
+              <strong><code>input()</code> — the signal way</strong>
+              <p>Returns a read-only signal. Read it with <code>this.value()</code>; it slots directly into <code>computed()</code> and <code>effect()</code>.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">🧭</div>
+          <div class="callout-content">
+            <strong class="callout-title">Decorators aren't gone — just for I/O</strong>
+            <p>The class is still a component declared with the <code>@Component</code> decorator. What changes is how <em>inputs, outputs and element queries</em> are declared: functions called as field initializers, not member decorators. The Angular team recommends these for new code.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The same input, both ways</h2>
+        <p>The typewriter component in this app uses the classic decorator. Here is that real line, next to the v19 signal form it maps to.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">today — typewriter.component.ts</span>
+            <pre><code><span class="code-line"><span class="code-comment">// Decorator form (what this repo ships)</span></span>
+<span class="code-line"><span class="code-keyword">@Input</span>({ <span class="code-property">required</span>: <span class="code-keyword">true</span> }) phrases: <span class="code-keyword">string</span>[] = [];</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-comment">// Signal form (the v19 equivalent)</span></span>
+<span class="code-line">phrases = <span class="code-function">input</span>.required&lt;<span class="code-keyword">string</span>[]&gt;();</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What changes</span>
+            <div class="translation-lines">
+              <p class="tl">The parent binding is identical either way: <code>[phrases]="myList"</code>. Callers don't notice the switch.</p>
+              <p class="tl"><code>input.required&lt;T&gt;()</code> is the required variant — no default value, and the compiler enforces that a parent passes one.</p>
+              <p class="tl">The big difference is <em>reading</em> it: <code>this.phrases()</code> with parentheses, because it is now a signal, not a plain field.</p>
+              <p class="tl">Because it is a signal, a <code>computed()</code> that reads it recalculates the moment the parent changes the value — no <code>ngOnChanges</code> needed.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The three input flavours</h2>
+        <p>One function, three shapes — chosen by whether the input is optional, mandatory, or needs a default plus a transform.</p>
+
+        <div class="badge-list">
+          <div class="badge-item">
+            <code class="badge-code">input(0)</code>
+            <span class="badge-desc">Optional input with a default value of <code>0</code>. If the parent binds nothing, the signal reads the default.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">input.required&lt;T&gt;()</code>
+            <span class="badge-desc">Mandatory. No default; the build fails if a parent forgets the binding — the signal equivalent of <code>{ required: true }</code>.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">input(0, { transform: … })</code>
+            <span class="badge-desc">Runs a function on each incoming value — e.g. coerce a string attribute to a number before it lands.</span>
+          </div>
+        </div>
+
+        <div class="callout callout-accent">
+          <div class="callout-icon">🔒</div>
+          <div class="callout-content">
+            <strong class="callout-title">Inputs are read-only by design</strong>
+            <p><code>input()</code> returns an <em>InputSignal</em> you can read but not <code>.set()</code>. That enforces one-way data flow: the parent owns the value, the child only consumes it. If a child needs to write back, that is a different tool — <code>model()</code>, two screens down.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading"><code>output()</code>: sending events upward</h2>
+        <p>Where <code>input()</code> lets data flow down, <code>output()</code> lets a child announce that something happened. It replaces <code>@Output</code> + <span class="term" data-definition="EventEmitter: Angular's classic event-dispatch class used with @Output. A child creates one and calls .emit(value); the parent listens with (eventName). output() removes the need to instantiate it by hand.">EventEmitter</span> with one function.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">a hypothetical filter chip</span>
+            <pre><code><span class="code-line"><span class="code-comment">// Old: decorator + EventEmitter</span></span>
+<span class="code-line"><span class="code-keyword">@Output</span>() selected = <span class="code-keyword">new</span> <span class="code-function">EventEmitter</span>&lt;<span class="code-keyword">string</span>&gt;();</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-comment">// New: the output() function</span></span>
+<span class="code-line">selected = <span class="code-function">output</span>&lt;<span class="code-keyword">string</span>&gt;();</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-comment">// Firing it looks the same either way</span></span>
+<span class="code-line"><span class="code-keyword">this</span>.selected.<span class="code-function">emit</span>(<span class="code-string">'angular'</span>);</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What changes</span>
+            <div class="translation-lines">
+              <p class="tl">The parent still listens the same way: <code>(selected)="onSelect($event)"</code>.</p>
+              <p class="tl"><code>output()</code> gives you back something with an <code>emit()</code> method — no <code>new EventEmitter()</code> boilerplate.</p>
+              <p class="tl">It is <em>not</em> a signal (an event is a moment, not a value), but it lives in the same function-based family and cleans up automatically.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading"><code>model()</code>: two-way in one line</h2>
+        <p>Sometimes a child both reads a value and writes it back — a toggle, a search box. <code>model()</code> is a writable signal that a parent can bind two ways with the <span class="term" data-definition="Banana in a box: the nickname for Angular's two-way binding syntax [(prop)] — parentheses (the banana) inside brackets (the box). It combines an input binding and an output binding into one.">"banana in a box"</span> syntax.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-sig-1","label":"A parent binds a search box two ways: [(query)]=\"searchTerm\". The child owns a model() signal called query."},
+          {"highlight":"flow-sig-2","label":"The user types. The child calls query.set(\"ng\") — writing to its own model signal.","packet":true,"from":"sig-1","to":"sig-2"},
+          {"highlight":"flow-sig-3","label":"Because it is a model, the new value flows back UP to the parent automatically. searchTerm updates with no event handler wired by hand.","packet":true,"from":"sig-2","to":"sig-3"},
+          {"highlight":"flow-sig-4","label":"Any computed() reading the parent value recomputes, the view repaints, and both sides stay in sync — one signal, two directions.","packet":true,"from":"sig-3","to":"sig-4"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-sig-1">
+              <div class="flow-actor-icon">🔗</div>
+              <span>[(query)] binding</span>
+            </div>
+            <div class="flow-actor" id="flow-sig-2">
+              <div class="flow-actor-icon">⌨️</div>
+              <span>Child .set()</span>
+            </div>
+            <div class="flow-actor" id="flow-sig-3">
+              <div class="flow-actor-icon">⬆️</div>
+              <span>Parent updates</span>
+            </div>
+            <div class="flow-actor" id="flow-sig-4">
+              <div class="flow-actor-icon">🖼️</div>
+              <span>View in sync</span>
+            </div>
+          </div>
+          <div class="flow-packet" id="flow-packet"></div>
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to watch a value travel both ways</div>
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Queries: grabbing elements as signals</h2>
+        <p>To reach a child element or component, <code>@ViewChild</code> used to hand you a value that was only reliable after <code>ngAfterViewInit</code>. The signal query <code>viewChild()</code> hands you a signal instead — read it anywhere, and it is defined when the element exists.</p>
+
+        <div class="badge-list">
+          <div class="badge-item">
+            <code class="badge-code">viewChild('ref')</code>
+            <span class="badge-desc">A signal to a single element/component in <em>this</em> component's own template. Replaces <code>@ViewChild</code>.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">viewChildren('ref')</code>
+            <span class="badge-desc">A signal to a list of matching elements. Replaces <code>@ViewChildren</code>.</span>
+          </div>
+          <div class="badge-item">
+            <code class="badge-code">contentChild('ref')</code>
+            <span class="badge-desc">A signal to projected content passed in via <code>&lt;ng-content&gt;</code>. Replaces <code>@ContentChild</code>.</span>
+          </div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">⏱️</div>
+          <div class="callout-content">
+            <strong class="callout-title">Why "as a signal" fixes a classic bug</strong>
+            <p>The old <code>@ViewChild</code> was <code>undefined</code> until the view initialised, so reading it too early silently returned nothing — a top-five Angular gotcha. A query signal reads consistently and lets a <code>computed()</code> or <code>effect()</code> wait for the element to appear, instead of you guessing the right lifecycle hook.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The decorator → signal cheat sheet</h2>
+        <p>The whole migration, at a glance. Same intent on the left and right — the right is just reactive by default.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-actor-1)">📥</div>
+            <h4 class="pattern-title">@Input → input()</h4>
+            <p class="pattern-desc">Data in. Now a read-only signal you call with <code>()</code>.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">📤</div>
+            <h4 class="pattern-title">@Output → output()</h4>
+            <p class="pattern-desc">Events out. No more <code>new EventEmitter()</code>.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🔁</div>
+            <h4 class="pattern-title">@Input + @Output → model()</h4>
+            <p class="pattern-desc">Two-way. One writable signal, banana-in-a-box binding.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">🔎</div>
+            <h4 class="pattern-title">@ViewChild → viewChild()</h4>
+            <p class="pattern-desc">Element refs. Now a signal that's safe to read early.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Would you reach for a signal API?</h2>
+        <p>Decision calls a developer makes when steering a v19 codebase.</p>
+
+        <div class="quiz-container" id="quiz-module9">
+          <div class="quiz-question-block"
+               data-correct="opt-signal"
+               data-explanation-right="Exactly. Because input() returns a signal, a computed() that reads it recalculates automatically on every change — no ngOnChanges, no setter. That's the whole reason the signal form exists."
+               data-explanation-wrong="Think about what each form gives you. A plain @Input needs ngOnChanges or a setter to react. input() is a signal, so a computed() reading it updates on its own — far less wiring for derived state.">
+            <h3 class="quiz-question">A child must recompute a derived value every time an input changes. Which form needs the least wiring?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="opt-input" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span><code>@Input</code> plus an <code>ngOnChanges</code> hook</span>
+              </button>
+              <button class="quiz-option" data-value="opt-signal" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span><code>input()</code> read inside a <code>computed()</code></span>
+              </button>
+              <button class="quiz-option" data-value="opt-same" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>They require identical amounts of code</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="opt-model"
+               data-explanation-right="Right. A value the child both reads and writes back to the parent is exactly what model() is for — it powers [(twoWay)] binding with a single writable signal."
+               data-explanation-wrong="Consider the direction of data. input() is read-only (one-way down). When the child needs to change the value and have the parent follow, that's two-way — model()'s job.">
+            <h3 class="quiz-question">A custom toggle component must update the parent's value when clicked. Which API fits?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="opt-inputonly" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span><code>input()</code> — it can write back</span>
+              </button>
+              <button class="quiz-option" data-value="opt-model" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span><code>model()</code> — a writable, two-way signal</span>
+              </button>
+              <button class="quiz-option" data-value="opt-query" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span><code>viewChild()</code> — a query signal</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="opt-early"
+               data-explanation-right="Correct. The old @ViewChild was undefined until ngAfterViewInit; a viewChild() signal reads consistently and lets a computed/effect react when the element appears — killing the 'undefined too early' bug."
+               data-explanation-wrong="Think about timing. The classic pain with @ViewChild was reading it before ngAfterViewInit and getting undefined. The signal query removes that trap by being a signal you can read consistently.">
+            <h3 class="quiz-question">What real bug does <code>viewChild()</code> being a signal eliminate?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="opt-early" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Reading the element too early and getting <code>undefined</code></span>
+              </button>
+              <button class="quiz-option" data-value="opt-mem" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Memory leaks from event listeners</span>
+              </button>
+              <button class="quiz-option" data-value="opt-css" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>CSS styles leaking between components</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module9')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module9')">Try Again</button>
+        </div>
+
+        <p>Inputs, outputs and queries are how components exchange values. One more everyday tool shapes how those values <em>look</em> in the template without touching the data itself — the pipe.</p>
+      </section>
+
+    </div>
+  </div>
+</section>
+<section class="module" id="module-10" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">10</span>
+      <h1 class="module-title">Pipes</h1>
+      <p class="module-subtitle">A declarative way to reshape a value <em>for display only</em> — right inside the template, without touching the underlying data or writing a method. Plus the pure/impure distinction that decides whether a pipe is cheap or costly.</p>
+    </header>
+
+    <div class="module-body">
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">A filter over the lens, not the subject</h2>
+        <p>A pipe is like a <strong>photo filter</strong>: the original image on your camera roll is untouched, but what you <em>see</em> is warmer, cropped, brightened. <span class="term" data-definition="A pipe is a class that transforms a value for display in a template using the | syntax. It never mutates the source data — it returns a new, formatted view of it.">A pipe</span> transforms how a value appears in the template while the data behind it stays exactly as it was.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">template syntax</span>
+            <pre><code><span class="code-line"><span class="code-comment">&lt;!-- value | pipeName : argument --&gt;</span></span>
+<span class="code-line">{{ startDate | <span class="code-function">date</span> : <span class="code-string">'MMM yyyy'</span> }}</span>
+<span class="code-line">{{ name | <span class="code-function">uppercase</span> }}</span>
+<span class="code-line">{{ stream$ | <span class="code-function">async</span> }}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">How to read it</span>
+            <div class="translation-lines">
+              <p class="tl">The <code>|</code> sends the value on its left <em>through</em> the pipe named on its right.</p>
+              <p class="tl">Anything after a <code>:</code> is an argument — here, the date format string.</p>
+              <p class="tl">These three (<code>date</code>, <code>uppercase</code>, <code>async</code>) are built in. This app pulls them in through <code>CommonModule</code>, even though its templates don't currently use them.</p>
+              <p class="tl">The stored <code>startDate</code> never changes — only its rendered text does.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">This codebase formats without a pipe — on purpose</h2>
+        <p>The résumé needs to show "3.7 years" for a role. It does that with a plain function, not a pipe. Seeing the alternative sharpens what a pipe actually buys you.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">utils/duration.ts</span>
+            <pre><code><span class="code-line"><span class="code-comment">/** Whole-year decimal between two 'YYYY-MM' dates. */</span></span>
+<span class="code-line"><span class="code-keyword">export function</span> <span class="code-function">yearsBetween</span>(from: <span class="code-keyword">string</span>, to: <span class="code-keyword">string</span>): <span class="code-keyword">string</span> {</span>
+<span class="code-line">  <span class="code-keyword">const</span> [fy, fm] = from.<span class="code-function">split</span>(<span class="code-string">'-'</span>).<span class="code-function">map</span>(Number);</span>
+<span class="code-line">  <span class="code-keyword">const</span> [ty, tm] = to.<span class="code-function">split</span>(<span class="code-string">'-'</span>).<span class="code-function">map</span>(Number);</span>
+<span class="code-line">  <span class="code-keyword">return</span> (((ty * <span class="code-number">12</span> + tm) - (fy * <span class="code-number">12</span> + fm)) / <span class="code-number">12</span>).<span class="code-function">toFixed</span>(<span class="code-number">1</span>);</span>
+<span class="code-line">}</span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What Angular does — and doesn't</span>
+            <div class="translation-lines">
+              <p class="tl">A component calls <code>yearsBetween(a, b)</code> and stores the string. The template just prints it.</p>
+              <p class="tl">This is fine here because the value is computed <em>once</em> from static data that never changes at runtime.</p>
+              <p class="tl">A pipe earns its keep when the same formatting is reused across many templates, or must re-run as data changes — neither is true for this one-off calculation.</p>
+              <p class="tl">Knowing when <em>not</em> to reach for a pipe is as useful as knowing how to write one.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Turning that function into a pipe</h2>
+        <p>If this formatting were needed in ten templates, you would promote it to a pipe: a class with the <code>@Pipe</code> decorator and a single <code>transform</code> method.</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">years.pipe.ts (illustrative)</span>
+            <pre><code><span class="code-line"><span class="code-keyword">@Pipe</span>({ <span class="code-property">name</span>: <span class="code-string">'years'</span>, <span class="code-property">standalone</span>: <span class="code-keyword">true</span> })</span>
+<span class="code-line"><span class="code-keyword">export class</span> <span class="code-function">YearsPipe</span> <span class="code-keyword">implements</span> PipeTransform {</span>
+<span class="code-line">  <span class="code-function">transform</span>(from: <span class="code-keyword">string</span>, to: <span class="code-keyword">string</span>): <span class="code-keyword">string</span> {</span>
+<span class="code-line">    <span class="code-keyword">return</span> <span class="code-function">yearsBetween</span>(from, to);</span>
+<span class="code-line">  }</span>
+<span class="code-line">}</span>
+<span class="code-line"><span class="code-comment">// in a template: {{ role.start | years : role.end }}</span></span></code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">What each piece is</span>
+            <div class="translation-lines">
+              <p class="tl"><code>@Pipe({ name: 'years' })</code> registers the template name — the word after <code>|</code>.</p>
+              <p class="tl"><span class="term" data-definition="PipeTransform is the interface every pipe implements. It requires exactly one method, transform(), which Angular calls to produce the displayed value.">PipeTransform</span> forces the class to provide one method: <code>transform</code>.</p>
+              <p class="tl">The value before <code>|</code> becomes the first argument; each <code>: arg</code> becomes the next. So <code>role.start</code> is <code>from</code>, <code>role.end</code> is <code>to</code>.</p>
+              <p class="tl"><code>standalone: true</code> means a component just adds <code>YearsPipe</code> to its <code>imports</code> — no NgModule, same rule as components.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Pure vs impure — the setting that decides cost</h2>
+        <p>This is the one pipe concept with real performance stakes. By default pipes are <strong>pure</strong>: Angular only re-runs <code>transform</code> when the input <em>reference</em> changes. An <strong>impure</strong> pipe re-runs on every single change-detection pass.</p>
+
+        <div class="pattern-cards">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">🧊</div>
+            <h4 class="pattern-title">Pure (default)</h4>
+            <p class="pattern-desc">Recomputes only when the input value or object reference changes. Cheap — <span class="term" data-definition="Memoization: caching the result of a computation so that repeating it with the same input returns the stored answer instead of recalculating.">memoized</span> by design. Use this almost always.</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-4)">
+            <div class="pattern-icon" style="background: var(--color-actor-4)">🔥</div>
+            <h4 class="pattern-title">Impure (opt-in)</h4>
+            <p class="pattern-desc"><code>{ pure: false }</code>. Runs on <em>every</em> change-detection tick — fine for <code>async</code>, dangerous for heavy work. Reach for it rarely.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-warning">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-content">
+            <strong class="callout-title">The classic pure-pipe surprise</strong>
+            <p>Because a pure pipe only re-runs when the <em>reference</em> changes, mutating an array in place (<code>arr.push(x)</code>) will <strong>not</strong> update a pipe that filters it — the reference is the same. The fix is to replace the array (<code>arr = [...arr, x]</code>), which is exactly the immutable style signals encourage. Recognising this saves hours of "why isn't my list updating?"</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Spot the pipe bug</h2>
+        <p>One of these lines makes a pure pipe silently stop updating. Click the culprit.</p>
+
+        <div class="bug-challenge">
+          <h3>A pipe filters <code>skills</code>. Why won't the view refresh when a skill is added?</h3>
+          <div class="bug-code">
+            <div class="bug-line" data-line="1" onclick="checkBugLine(this, false)">
+              <span class="line-num">1</span>
+              <code>@Pipe({ name: 'byTag' })  // pure by default</code>
+            </div>
+            <div class="bug-line" data-line="2" onclick="checkBugLine(this, false)">
+              <span class="line-num">2</span>
+              <code>transform(skills: Skill[], tag: string) {</code>
+            </div>
+            <div class="bug-line" data-line="3" onclick="checkBugLine(this, false)">
+              <span class="line-num">3</span>
+              <code>  return skills.filter(s => s.tag === tag);</code>
+            </div>
+            <div class="bug-line" data-line="4" onclick="checkBugLine(this, false)">
+              <span class="line-num">4</span>
+              <code>}</code>
+            </div>
+            <div class="bug-line bug-target" data-line="5" onclick="checkBugLine(this, true)">
+              <span class="line-num">5</span>
+              <code>// caller: this.skills.push(newSkill);</code>
+            </div>
+          </div>
+          <div class="bug-feedback" id="bug-feedback"></div>
+        </div>
+
+        <div class="callout callout-info">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">The takeaway</strong>
+            <p>The pipe is correct. The <em>caller</em> mutates the array in place, so its reference never changes and the pure pipe never re-runs. Replace the array instead of pushing into it — the same immutable habit that keeps signals and <code>OnPush</code> happy.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">The <code>async</code> pipe: the one you'll use most</h2>
+        <p>The built-in <code>async</code> pipe is the standout impure pipe. It subscribes to an Observable or Promise, hands the latest value to the template, and — crucially — unsubscribes for you when the component is destroyed.</p>
+
+        <div class="icon-rows">
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-1)">🔌</div>
+            <div>
+              <strong>Subscribes automatically</strong>
+              <p><code>{{ data$ | async }}</code> — no manual <code>.subscribe()</code> in your component code.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-2)">🧹</div>
+            <div>
+              <strong>Unsubscribes on destroy</strong>
+              <p>It cleans up when the view goes away — sidestepping the memory-leak teardown lesson from Module 07.</p>
+            </div>
+          </div>
+          <div class="icon-row">
+            <div class="icon-circle" style="background: var(--color-actor-3)">📡</div>
+            <div>
+              <strong>Signals reduce the need</strong>
+              <p>In a signal-first app like this one, reading a signal in the template covers most of what <code>async</code> did — so you'll see it less here than in RxJS-heavy apps.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Do you reach for a pipe?</h2>
+        <p>The judgement calls that separate a clean template from a slow one.</p>
+
+        <div class="quiz-container" id="quiz-module10">
+          <div class="quiz-question-block"
+               data-correct="opt-pipe"
+               data-explanation-right="Right. Reused, display-only formatting across many templates is the textbook case for a pure pipe — declarative, memoized, and it keeps the source data untouched."
+               data-explanation-wrong="Think about reuse and where the logic belongs. Formatting the same way in many templates, purely for display, is exactly what a pure pipe is for — cleaner than repeating a method everywhere.">
+            <h3 class="quiz-question">The same "3.7 years" formatting is suddenly needed in eight different templates. Best move?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="opt-copy" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Copy the method into all eight components</span>
+              </button>
+              <button class="quiz-option" data-value="opt-pipe" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Promote it to a pure, standalone pipe</span>
+              </button>
+              <button class="quiz-option" data-value="opt-impure" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Make it an impure pipe to be safe</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="opt-ref"
+               data-explanation-right="Exactly. A pure pipe re-runs only when the input reference changes. push() mutates in place, so the reference is identical and the pipe stays put. Replace the array to fix it."
+               data-explanation-wrong="Recall how pure pipes decide to re-run: only when the input reference changes. Mutating the array in place keeps the same reference, so the pipe never fires. That's the root cause here.">
+            <h3 class="quiz-question">A list filtered by a pure pipe won't update after new items arrive. Most likely cause?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="opt-ref" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The array is mutated in place, so its reference never changes</span>
+              </button>
+              <button class="quiz-option" data-value="opt-name" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The pipe's <code>name</code> is misspelled</span>
+              </button>
+              <button class="quiz-option" data-value="opt-import" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>The pipe wasn't added to <code>imports</code></span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <div class="quiz-question-block"
+               data-correct="opt-async"
+               data-explanation-right="Correct. The async pipe subscribes and — the part that saves you — unsubscribes automatically when the view is destroyed, avoiding the manual-teardown leak from Module 07."
+               data-explanation-wrong="Think about lifecycle safety. The async pipe's real value is that it unsubscribes for you on destroy, so you don't leak subscriptions the way a hand-rolled .subscribe() can.">
+            <h3 class="quiz-question">Beyond convenience, what does the <code>async</code> pipe protect you from?</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="opt-async" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Leaking a subscription by forgetting to unsubscribe</span>
+              </button>
+              <button class="quiz-option" data-value="opt-type" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Type errors in the template</span>
+              </button>
+              <button class="quiz-option" data-value="opt-style" onclick="selectOption(this)">
+                <div class="quiz-option-radio"></div>
+                <span>Styles leaking to other components</span>
+              </button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module10')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module10')">Try Again</button>
+        </div>
+
+        <p>You now have the language surface Angular gives you — decorators, signal I/O, and pipes. Time to watch every system in the course fire at once, in one real feature.</p>
+      </section>
+
+    </div>
+  </div>
+</section>
+<section class="module" id="module-11" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">11</span>
       <h1 class="module-title">Applied — the SQL console, decompiled</h1>
       <p class="module-subtitle">One feature that exercises every system in the course: a pure tokenizer, signals, a computed, real <code>@if</code>/<code>@else</code>, and lifecycle-driven side effects.</p>
     </header>
@@ -1860,7 +2801,7 @@
           <div class="callout-icon">🏁</div>
           <div class="callout-content">
             <strong class="callout-title">You have read the whole machine</strong>
-            <p>This one component is the course in miniature: a standalone component (02) with a signal-based template (03, 04), assembled through dependency injection (05), repainted by change detection (06), reaching the DOM through lifecycle-managed observers (07). Every Angular feature you meet next is a variation on these moves.</p>
+            <p>This one component is the course in miniature: a standalone component (02) with a signal-based template (03, 04), assembled through dependency injection (05), repainted by change detection (06), reaching the DOM through lifecycle-managed observers (07) — all described by decorators (08), increasingly written with the signal-based APIs (09), and formatted by pipes (10). Every Angular feature you meet next is a variation on these moves.</p>
           </div>
         </div>
       </section>
