@@ -151,6 +151,45 @@
       </section>
 
       <section class="screen animate-in">
+        <h2 class="screen-heading">Trace: one directive, cradle to grave</h2>
+        <p>Attach, reach into the DOM, react, then clean up. The reveal directive lives a full lifecycle — from <span class="term" data-definition="ngOnInit: a lifecycle hook Angular calls once after it has set the directive or component inputs and before the template is rendered — the place for setup work.">ngOnInit</span> to <span class="term" data-definition="ngOnDestroy: a lifecycle hook Angular calls once just before it destroys the directive or component — for example when @if hides it or you navigate away — where you release observers, listeners, and timers.">ngOnDestroy</span>.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-dir-1","label":"Angular finds appReveal on an element and constructs the directive instance."},
+          {"highlight":"flow-dir-2","label":"During construction a field initializer calls inject(ElementRef), a handle to the host DOM node. inject() is legal only in this injection context.","packet":true,"from":"dir-1","to":"dir-2"},
+          {"highlight":"flow-dir-3","label":"ngOnInit runs after inputs are set and before the template renders. It creates an IntersectionObserver aimed at that node.","packet":true,"from":"dir-2","to":"dir-3"},
+          {"highlight":"flow-dir-3","label":"When the element scrolls into view the observer fires, adds the is-visible class, then unobserves — a deliberate one-shot reveal."},
+          {"highlight":"flow-dir-4","label":"When the element is removed, by @if or navigation, ngOnDestroy runs disconnect() so no observer is left leaking.","packet":true,"from":"dir-3","to":"dir-4"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-dir-1">
+              <div class="flow-actor-icon">🧩</div>
+              <span>Directive</span>
+            </div>
+            <div class="flow-actor" id="flow-dir-2">
+              <div class="flow-actor-icon">🎯</div>
+              <span>ElementRef</span>
+            </div>
+            <div class="flow-actor" id="flow-dir-3">
+              <div class="flow-actor-icon">👁️</div>
+              <span>IntersectionObserver</span>
+            </div>
+            <div class="flow-actor" id="flow-dir-4">
+              <div class="flow-actor-icon">🧹</div>
+              <span>ngOnDestroy</span>
+            </div>
+          </div>
+          <div class="flow-packet" id="flow-packet"></div>
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to trace the lifecycle</div>
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
         <h2 class="screen-heading">The whole machine, assembled</h2>
         <p>Seven modules, four systems. Here is how they interlock in this one codebase — and in every Angular app you will read next.</p>
 

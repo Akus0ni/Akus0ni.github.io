@@ -142,6 +142,45 @@
       </section>
 
       <section class="screen animate-in">
+        <h2 class="screen-heading">Trace: resolution walks upward</h2>
+        <p>That rule is worth watching in motion. When you <code>inject()</code> a token, Angular searches the <span class="term" data-definition="ElementInjector: an injector attached to a specific component or directive element in the DOM tree. Dependency resolution starts here and walks up through parent elements before falling back to the environment injectors.">ElementInjector</span> hierarchy first, then falls back to the <span class="term" data-definition="EnvironmentInjector: the application- and route-level injector hierarchy that holds providedIn: 'root' services. Angular searches it only after the element injector hierarchy comes up empty.">EnvironmentInjector</span> hierarchy.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-di-1","label":"A directive calls inject(ScrollSpyService), asking the injector system for that token."},
+          {"highlight":"flow-di-2","label":"Angular looks first in the ElementInjector of this very element.","packet":true,"from":"di-1","to":"di-2"},
+          {"highlight":"flow-di-3","label":"No provider here, so the request passes up through the ElementInjectors of parent components toward the root component.","packet":true,"from":"di-2","to":"di-3"},
+          {"highlight":"flow-di-4","label":"Still nothing element-scoped, so Angular falls back to the EnvironmentInjector hierarchy.","packet":true,"from":"di-3","to":"di-4"},
+          {"highlight":"flow-di-1","label":"The root EnvironmentInjector holds the providedIn root singleton. The first match wins, and that one instance is returned to the caller.","packet":true,"from":"di-4","to":"di-1"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-di-1">
+              <div class="flow-actor-icon">🧱</div>
+              <span>inject(token)</span>
+            </div>
+            <div class="flow-actor" id="flow-di-2">
+              <div class="flow-actor-icon">🎯</div>
+              <span>Element injector</span>
+            </div>
+            <div class="flow-actor" id="flow-di-3">
+              <div class="flow-actor-icon">⬆️</div>
+              <span>Parent injectors</span>
+            </div>
+            <div class="flow-actor" id="flow-di-4">
+              <div class="flow-actor-icon">🌍</div>
+              <span>Environment injector</span>
+            </div>
+          </div>
+          <div class="flow-packet" id="flow-packet"></div>
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to follow the lookup</div>
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
         <h2 class="screen-heading">Element-scoped injection: <code>ElementRef</code></h2>
         <p>Not every dependency is a global service. The reveal directive injects its own host element — a token only the element injector can satisfy.</p>
 

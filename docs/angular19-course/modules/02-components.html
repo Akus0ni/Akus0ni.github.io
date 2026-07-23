@@ -108,6 +108,45 @@
       </section>
 
       <section class="screen animate-in">
+        <h2 class="screen-heading">Trace: how selectors build the tree</h2>
+        <p>That file tree is not configured anywhere — it emerges from <span class="term" data-definition="Selector matching: Angular creates one instance of a component for every element in a template that matches the component's CSS selector.">selector matching</span>. Step through how a single <code>&lt;app-root&gt;</code> element unfolds into the whole page.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-c2-1","label":"index.html contains a single app-root element — the CSS selector of the root component."},
+          {"highlight":"flow-c2-2","label":"Angular scans the markup and finds an element matching a known component selector.","packet":true,"from":"c2-1","to":"c2-2"},
+          {"highlight":"flow-c2-3","label":"For every matching element Angular creates one instance of that component and renders its template.","packet":true,"from":"c2-2","to":"c2-3"},
+          {"highlight":"flow-c2-4","label":"That template places child selectors like app-hero and app-about — each permitted only because it is listed in the imports array. Matching now repeats for them.","packet":true,"from":"c2-3","to":"c2-4"},
+          {"highlight":"flow-c2-4","label":"Selector matching cascades down until the entire component tree exists. Composition, not configuration, builds the page."}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-c2-1">
+              <div class="flow-actor-icon">🏷️</div>
+              <span>app-root</span>
+            </div>
+            <div class="flow-actor" id="flow-c2-2">
+              <div class="flow-actor-icon">🔎</div>
+              <span>Selector match</span>
+            </div>
+            <div class="flow-actor" id="flow-c2-3">
+              <div class="flow-actor-icon">🧩</div>
+              <span>Instance + view</span>
+            </div>
+            <div class="flow-actor" id="flow-c2-4">
+              <div class="flow-actor-icon">🌳</div>
+              <span>Child components</span>
+            </div>
+          </div>
+          <div class="flow-packet" id="flow-packet"></div>
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to watch the tree assemble</div>
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
         <h2 class="screen-heading">Inline everything: a self-contained component</h2>
         <p>Small components put template <em>and</em> styles inline in the decorator. Here is the entire typewriter — notice it also opts into a different change detection strategy.</p>
 

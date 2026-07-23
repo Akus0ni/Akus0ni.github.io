@@ -379,6 +379,45 @@
       </section>
 
       <section class="screen animate-in">
+        <h2 class="screen-heading">Trace: how selectors build the tree</h2>
+        <p>That file tree is not configured anywhere — it emerges from <span class="term" data-definition="Selector matching: Angular creates one instance of a component for every element in a template that matches the component's CSS selector.">selector matching</span>. Step through how a single <code>&lt;app-root&gt;</code> element unfolds into the whole page.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-c2-1","label":"index.html contains a single app-root element — the CSS selector of the root component."},
+          {"highlight":"flow-c2-2","label":"Angular scans the markup and finds an element matching a known component selector.","packet":true,"from":"c2-1","to":"c2-2"},
+          {"highlight":"flow-c2-3","label":"For every matching element Angular creates one instance of that component and renders its template.","packet":true,"from":"c2-2","to":"c2-3"},
+          {"highlight":"flow-c2-4","label":"That template places child selectors like app-hero and app-about — each permitted only because it is listed in the imports array. Matching now repeats for them.","packet":true,"from":"c2-3","to":"c2-4"},
+          {"highlight":"flow-c2-4","label":"Selector matching cascades down until the entire component tree exists. Composition, not configuration, builds the page."}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-c2-1">
+              <div class="flow-actor-icon">🏷️</div>
+              <span>app-root</span>
+            </div>
+            <div class="flow-actor" id="flow-c2-2">
+              <div class="flow-actor-icon">🔎</div>
+              <span>Selector match</span>
+            </div>
+            <div class="flow-actor" id="flow-c2-3">
+              <div class="flow-actor-icon">🧩</div>
+              <span>Instance + view</span>
+            </div>
+            <div class="flow-actor" id="flow-c2-4">
+              <div class="flow-actor-icon">🌳</div>
+              <span>Child components</span>
+            </div>
+          </div>
+          <div class="flow-packet" id="flow-packet"></div>
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to watch the tree assemble</div>
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
         <h2 class="screen-heading">Inline everything: a self-contained component</h2>
         <p>Small components put template <em>and</em> styles inline in the decorator. Here is the entire typewriter — notice it also opts into a different change detection strategy.</p>
 
@@ -1033,6 +1072,45 @@
       </section>
 
       <section class="screen animate-in">
+        <h2 class="screen-heading">Trace: resolution walks upward</h2>
+        <p>That rule is worth watching in motion. When you <code>inject()</code> a token, Angular searches the <span class="term" data-definition="ElementInjector: an injector attached to a specific component or directive element in the DOM tree. Dependency resolution starts here and walks up through parent elements before falling back to the environment injectors.">ElementInjector</span> hierarchy first, then falls back to the <span class="term" data-definition="EnvironmentInjector: the application- and route-level injector hierarchy that holds providedIn: 'root' services. Angular searches it only after the element injector hierarchy comes up empty.">EnvironmentInjector</span> hierarchy.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-di-1","label":"A directive calls inject(ScrollSpyService), asking the injector system for that token."},
+          {"highlight":"flow-di-2","label":"Angular looks first in the ElementInjector of this very element.","packet":true,"from":"di-1","to":"di-2"},
+          {"highlight":"flow-di-3","label":"No provider here, so the request passes up through the ElementInjectors of parent components toward the root component.","packet":true,"from":"di-2","to":"di-3"},
+          {"highlight":"flow-di-4","label":"Still nothing element-scoped, so Angular falls back to the EnvironmentInjector hierarchy.","packet":true,"from":"di-3","to":"di-4"},
+          {"highlight":"flow-di-1","label":"The root EnvironmentInjector holds the providedIn root singleton. The first match wins, and that one instance is returned to the caller.","packet":true,"from":"di-4","to":"di-1"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-di-1">
+              <div class="flow-actor-icon">🧱</div>
+              <span>inject(token)</span>
+            </div>
+            <div class="flow-actor" id="flow-di-2">
+              <div class="flow-actor-icon">🎯</div>
+              <span>Element injector</span>
+            </div>
+            <div class="flow-actor" id="flow-di-3">
+              <div class="flow-actor-icon">⬆️</div>
+              <span>Parent injectors</span>
+            </div>
+            <div class="flow-actor" id="flow-di-4">
+              <div class="flow-actor-icon">🌍</div>
+              <span>Environment injector</span>
+            </div>
+          </div>
+          <div class="flow-packet" id="flow-packet"></div>
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to follow the lookup</div>
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
         <h2 class="screen-heading">Element-scoped injection: <code>ElementRef</code></h2>
         <p>Not every dependency is a global service. The reveal directive injects its own host element — a token only the element injector can satisfy.</p>
 
@@ -1480,6 +1558,45 @@
           <div class="callout-content">
             <strong class="callout-title">The teardown mental checklist</strong>
             <p>For every <code>addEventListener</code>, <code>new IntersectionObserver</code>, <code>setInterval</code>, or manual RxJS <code>subscribe</code> you create, ask "who calls the matching remove/disconnect/clear/unsubscribe?" If the answer is "nobody", it belongs in <code>ngOnDestroy</code> — or use <code>takeUntilDestroyed()</code> / <code>DestroyRef</code> to automate it.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">Trace: one directive, cradle to grave</h2>
+        <p>Attach, reach into the DOM, react, then clean up. The reveal directive lives a full lifecycle — from <span class="term" data-definition="ngOnInit: a lifecycle hook Angular calls once after it has set the directive or component inputs and before the template is rendered — the place for setup work.">ngOnInit</span> to <span class="term" data-definition="ngOnDestroy: a lifecycle hook Angular calls once just before it destroys the directive or component — for example when @if hides it or you navigate away — where you release observers, listeners, and timers.">ngOnDestroy</span>.</p>
+
+        <div class="flow-animation" data-steps='[
+          {"highlight":"flow-dir-1","label":"Angular finds appReveal on an element and constructs the directive instance."},
+          {"highlight":"flow-dir-2","label":"During construction a field initializer calls inject(ElementRef), a handle to the host DOM node. inject() is legal only in this injection context.","packet":true,"from":"dir-1","to":"dir-2"},
+          {"highlight":"flow-dir-3","label":"ngOnInit runs after inputs are set and before the template renders. It creates an IntersectionObserver aimed at that node.","packet":true,"from":"dir-2","to":"dir-3"},
+          {"highlight":"flow-dir-3","label":"When the element scrolls into view the observer fires, adds the is-visible class, then unobserves — a deliberate one-shot reveal."},
+          {"highlight":"flow-dir-4","label":"When the element is removed, by @if or navigation, ngOnDestroy runs disconnect() so no observer is left leaking.","packet":true,"from":"dir-3","to":"dir-4"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-dir-1">
+              <div class="flow-actor-icon">🧩</div>
+              <span>Directive</span>
+            </div>
+            <div class="flow-actor" id="flow-dir-2">
+              <div class="flow-actor-icon">🎯</div>
+              <span>ElementRef</span>
+            </div>
+            <div class="flow-actor" id="flow-dir-3">
+              <div class="flow-actor-icon">👁️</div>
+              <span>IntersectionObserver</span>
+            </div>
+            <div class="flow-actor" id="flow-dir-4">
+              <div class="flow-actor-icon">🧹</div>
+              <span>ngOnDestroy</span>
+            </div>
+          </div>
+          <div class="flow-packet" id="flow-packet"></div>
+          <div class="flow-step-label" id="flow-label">Click "Next Step" to trace the lifecycle</div>
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
           </div>
         </div>
       </section>
