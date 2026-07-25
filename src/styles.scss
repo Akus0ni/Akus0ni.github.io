@@ -177,6 +177,36 @@ ul { list-style: none; padding: 0; }
   animation: boot-blink 1s steps(1) infinite;
 }
 
+/* ---- Click "caret drop" — editor-native ripple (spawned in AppComponent) ---- */
+.click-ripple {
+  position: fixed; z-index: 9998; pointer-events: none;
+  /* centered on the pointer; children are absolutely placed around this point */
+  width: 0; height: 0;
+}
+.click-ripple i { position: absolute; display: block; transform: translate(-50%, -50%); }
+/* the square marquee ring snapping outward on the monospace grid */
+.click-ripple .cr-ring {
+  width: 15px; height: 15px; border-radius: 2px;
+  border: 1.5px solid var(--accent);
+  opacity: .9;
+  animation: cr-ring .5s var(--ease-out) forwards;
+}
+/* the filled cursor block registering the hit */
+.click-ripple .cr-core {
+  width: 6px; height: 6px; border-radius: 1px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  animation: cr-core .28s var(--ease-out) forwards;
+}
+@keyframes cr-ring {
+  0%   { transform: translate(-50%, -50%) scale(.35); opacity: .9; }
+  100% { transform: translate(-50%, -50%) scale(2.6); opacity: 0; }
+}
+@keyframes cr-core {
+  0%   { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0);   opacity: 0; }
+}
+
 /* ---- Reduced motion ---- */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
