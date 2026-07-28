@@ -10,20 +10,16 @@ describe('AppComponent', () => {
 
   it('should create the app', () => {
     const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it(`should have the 'portfolio' title`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app.title).toEqual('portfolio');
-  });
-
-  it('should render title', () => {
+  it('should render the workspace shell and layout chrome', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, portfolio');
+    expect(compiled.querySelector('.workspace')).toBeTruthy();
+    expect(compiled.querySelector('app-top-bar')).toBeTruthy();
+    expect(compiled.querySelector('app-explorer-rail')).toBeTruthy();
+    expect(compiled.querySelector('app-status-bar')).toBeTruthy();
   });
 });

@@ -1,0 +1,47 @@
+<section id="contact" class="contact">
+  <div class="band" aria-hidden="true">
+    <img src="media/akash-sunset.jpg" alt="" loading="lazy" />
+  </div>
+
+  <div class="panel" appReveal>
+    <app-section-header id="contact" />
+
+    <div class="term">
+      <div class="term-bar">
+        <app-window-dots />
+        <span class="term-title mono">bash — akash&#64;portfolio</span>
+      </div>
+      <div class="term-body mono">
+        <p class="tl"><span class="prompt">akash&#64;portfolio</span>:<span class="path">~</span>$ ./contact.sh --hire</p>
+        <p class="tl out"><span class="ok">✔</span> {{ profile.availability }}</p>
+        <p class="tl out"><span class="ok">✔</span> {{ links.location }} · remote-friendly · {{ profile.timezone }}</p>
+        <p class="tl"><span class="prompt">akash&#64;portfolio</span>:<span class="path">~</span>$ ls ./channels</p>
+
+        <div class="links">
+          <a class="lk" [href]="'mailto:' + links.email">
+            <span class="lk-k mono">email</span>
+            <span class="lk-v">{{ links.email }}</span>
+            <span class="arw" aria-hidden="true">→</span>
+          </a>
+          <a class="lk" [href]="links.linkedin" target="_blank" rel="noopener">
+            <span class="lk-k mono">linkedin</span>
+            <span class="lk-v">/in/akus0ni</span>
+            <span class="arw" aria-hidden="true">→</span>
+          </a>
+          <a class="lk" [href]="links.github" target="_blank" rel="noopener">
+            <span class="lk-k mono">github</span>
+            <span class="lk-v">/Akus0ni</span>
+            <span class="arw" aria-hidden="true">→</span>
+          </a>
+          <a class="lk primary" [href]="links.resume" download>
+            <span class="lk-k mono">resume</span>
+            <span class="lk-v">Akash_Soni_Resume.pdf ↓</span>
+            <span class="arw" aria-hidden="true">→</span>
+          </a>
+        </div>
+
+        <p class="tl"><span class="prompt">akash&#64;portfolio</span>:<span class="path">~</span>$ <span class="blink-caret"></span></p>
+      </div>
+    </div>
+  </div>
+</section>

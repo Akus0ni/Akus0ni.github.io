@@ -6,12 +6,8 @@ import {
   selector: 'app-typewriter',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<span class="tw">{{ text() }}<span class="blink-caret" aria-hidden="true"></span></span>`,
-  styles: [`
-    .tw { font-family: var(--font-mono); }
-    /* caret is the shared global .blink-caret; nudge it away from the text */
-    .blink-caret { margin-left: 2px; }
-  `],
+  templateUrl: './typewriter.component.html',
+  styleUrl: './typewriter.component.scss',
 })
 export class TypewriterComponent implements OnInit, OnDestroy {
   @Input({ required: true }) phrases: string[] = [];

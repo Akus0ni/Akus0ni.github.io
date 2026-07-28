@@ -1,0 +1,66 @@
+<section id="home" class="hero">
+  <div class="hero-grid">
+    <!-- identity -->
+    <div class="identity">
+      <p class="eyebrow load load-1">~/akash-soni · <span class="branch">main</span></p>
+
+      <pre class="id-code load load-2" aria-hidden="true"><span class="tok-com">// {{ profile.availabilityComment }}</span>
+<span class="tok-key">public sealed class</span> <span class="tok-type">Akash</span> : <span class="tok-type">SoftwareEngineer</span></pre>
+
+      <h1 class="name load load-3">{{ profile.name }}</h1>
+
+      <div class="role load load-4">
+        <span class="chev">&gt;</span>
+        <app-typewriter [phrases]="profile.typewriter"></app-typewriter>
+      </div>
+
+      <p class="tagline load load-5">
+        6+ years turning tangled enterprise systems into clean, reusable
+        platforms — <span class="accent">.NET / C#</span> on
+        <span class="accent">AWS&nbsp;&amp;&nbsp;Azure</span>. Integrations are the throughline.
+      </p>
+
+      <div class="cta load load-6">
+        <a class="btn btn-primary" href="#projects">
+          <span class="mono">&lt;/&gt;</span> View work
+        </a>
+        <a class="btn btn-ghost" [href]="links.resume" download>
+          Download résumé
+        </a>
+        <a class="btn btn-ghost" [href]="'mailto:' + links.email">
+          Email me
+        </a>
+      </div>
+    </div>
+
+    <!-- portrait, treated as an editor preview -->
+    <figure class="portrait-frame load load-5">
+      <div class="pf-bar">
+        <app-window-dots />
+        <span class="pf-name mono">akash.jpg — preview</span>
+      </div>
+      <div class="portrait">
+        <img src="media/akash-portrait.jpg"
+             alt="Portrait of Akash Soni at the coast at sunset" loading="eager" />
+        <span class="scan"></span>
+      </div>
+      <figcaption class="pf-tags">
+        <span>{{ profile.locationShort }}</span><span>· {{ profile.timezone }}</span><span>· <a class="pf-cta" href="#contact">{{ profile.ctaCaption }} <span class="ar" aria-hidden="true">→</span></a></span>
+      </figcaption>
+    </figure>
+  </div>
+
+  <!-- signature: real serverless architecture he shipped -->
+  <div class="signature" appReveal>
+    <div class="sig-head">
+      <p class="eyebrow">signature build · AI-Powered Review Intelligence</p>
+      <p class="sig-sub">A serverless AWS stack, architected & shipped solo — QR&nbsp;→ AI review in&nbsp;&lt;30s</p>
+    </div>
+    <app-arch-diagram></app-arch-diagram>
+  </div>
+
+  <a class="scroll-hint" href="#about" aria-label="Scroll to about">
+    <span class="mono">scroll</span>
+    <span class="arrow"></span>
+  </a>
+</section>
